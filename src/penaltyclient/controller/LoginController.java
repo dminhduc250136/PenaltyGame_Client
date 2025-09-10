@@ -7,6 +7,7 @@
 package penaltyclient.controller;
 
 import penaltyclient.view.LoginView;
+import penaltyclient.view.LobbyView;
 import javax.swing.*;
 import java.io.*;
 import java.net.*;
@@ -43,6 +44,11 @@ public class LoginController {
             String response = (String) in.readObject();
             if(response.equals("SUCCESS")) {
                 JOptionPane.showMessageDialog(loginView, "Login Success");
+                
+                loginView.dispose();
+                
+                LobbyView lobbyView = new LobbyView(user);
+                lobbyView.setVisible(true);
             }
             else {
                 JOptionPane.showMessageDialog(loginView, "Invalid information");

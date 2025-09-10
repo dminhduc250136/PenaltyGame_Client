@@ -13,10 +13,34 @@ import java.awt.*;
  * @author This PC
  */
 public class LobbyView extends JFrame {
+    private JButton btnStartGame;
+    private JButton btnLogout;
+    private JLabel lblWelcome;
+
+    public LobbyView() {
+    }
 
     /** Creates new form LobbyView */
-    public LobbyView() {
-        initComponents();
+    public LobbyView(String username) {
+        setTitle("Game Lobby");
+        setSize(400, 200);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+
+        lblWelcome = new JLabel("Welcome: " + username + " | ");
+        btnStartGame = new JButton("Start");
+        btnLogout = new JButton("Logout");
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new FlowLayout());
+        panel.add(lblWelcome);
+        panel.add(btnStartGame);
+        panel.add(btnLogout);
+
+        add(panel);
+        
+
+//        pack();
     }
 
     /** This method is called from within the constructor to
