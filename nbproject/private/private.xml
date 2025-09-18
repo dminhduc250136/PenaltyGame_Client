@@ -4,9 +4,9 @@
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
             <file>file:/C:/Users/This%20PC/Documents/NetBeansProjects/PenaltyClient/src/penaltyclient/view/LobbyView.java</file>
+            <file>file:/C:/Users/This%20PC/Documents/NetBeansProjects/PenaltyClient/src/penaltyclient/controller/LobbyController.java</file>
             <file>file:/C:/Users/This%20PC/Documents/NetBeansProjects/PenaltyClient/src/penaltyclient/controller/LoginController.java</file>
             <file>file:/C:/Users/This%20PC/Documents/NetBeansProjects/PenaltyClient/src/penaltyclient/view/LoginView.java</file>
-            <file>file:/C:/Users/This%20PC/Documents/NetBeansProjects/PenaltyClient/src/penaltyclient/view/MatchView.java</file>
         </group>
     </open-files>
 </project-private>

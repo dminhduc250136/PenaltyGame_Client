@@ -18,27 +18,23 @@ import java.net.*;
 public class LoginController {
     private LoginView loginView;
 
-    public LoginController(LoginView view) {
-        this.loginView = view;
-
-        loginView.btnLogin.addActionListener(e -> login());
-        loginView.btnExit.addActionListener(e -> System.exit(0));
+    public LoginController() {
+        loginView = new LoginView(this);
+        loginView.setVisible(true);
     }
 
     /**
      * @param args the command line arguments
      */
-    private void login() {
-        String user = loginView.txtUsername.getText();
-        String pass = new String(loginView.txtPassword.getPassword());
+    public void login(String username, String password) {
 
         try(Socket socket = new Socket("localhost", 12345)) {
             ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
             ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
 
             // send to server
-            out.writeObject(user);
-            out.writeObject(pass);
+            out.writeObject(username);
+            out.writeObject(password);
 
             // response
             String response = (String) in.readObject();
@@ -47,8 +43,7 @@ public class LoginController {
                 
                 loginView.dispose();
                 
-                LobbyView lobbyView = new LobbyView(user);
-                lobbyView.setVisible(true);
+                new LobbyController(username);
             }
             else {
                 JOptionPane.showMessageDialog(loginView, "Invalid information");

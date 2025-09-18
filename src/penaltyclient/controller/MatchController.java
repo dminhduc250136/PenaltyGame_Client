@@ -4,21 +4,18 @@
  * and open the template in the editor.
  */
 
-package penaltyclient;
+package penaltyclient.controller;
 
-import penaltyclient.controller.LoginController;
-import penaltyclient.view.LoginView;
 /**
  *
  * @author This PC
  */
-public class PenaltyClient {
+public class MatchController {
 
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) {
-        LoginController loginController = new LoginController();
+    public static void main(String args[]){
+        // TODO code application logic here
     }
-
 }
