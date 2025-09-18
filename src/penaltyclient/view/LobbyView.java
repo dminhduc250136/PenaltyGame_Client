@@ -47,6 +47,60 @@ public class LobbyView extends JFrame {
         headerPanel.add(userPanel, BorderLayout.EAST);
         
         add(headerPanel, BorderLayout.NORTH);
+
+        // table player
+
+        String[] cols = {"Name", "Score", "Status", "Action"};
+        tableModel = new DefaultTableModel(cols, 0);
+        tblPlayers = new JTable(tableModel);
+
+        tblPlayers.getColumn("Action").setCellRenderer(new ButtonRenderer());
+        tblPlayers.getColumn("Action").setCellEditor(new ButtonEditor(new JCheckBox(), lobbyController));
+
+        add(new JScrollPane(tblPlayers), BorderLayout.CENTER);
+    }
+    public void addPlayer(String name, String status, int score) {
+        tableModel.addRow(new Object[]{name, status, score, "Invite"});
+    }
+    class ButtonRenderer extends JButton implements TableCellRenderer {
+        public ButtonRenderer() {
+            setOpaque(true);
+        }
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                                                       boolean isSelected, boolean hasFocus,
+                                                       int row, int column) {
+            setText("Invite");
+            return this;
+        }
+    }
+
+    class ButtonEditor extends DefaultCellEditor {
+        private JButton button;
+        private int row;
+        private LobbyController controller;
+
+        public ButtonEditor(JCheckBox checkBox, LobbyController controller) {
+            super(checkBox);
+            this.controller = controller;
+            button = new JButton("Invite");
+            button.setOpaque(true);
+            button.addActionListener(e -> fireEditingStopped());
+        }
+
+        @Override
+        public Component getTableCellEditorComponent(JTable table, Object value,
+                                                     boolean isSelected, int row, int column) {
+            this.row = row;
+            return button;
+        }
+
+        @Override
+        public Object getCellEditorValue() {
+            String playerName = (String) tableModel.getValueAt(row, 0);
+            controller.handleInvite(playerName);
+            return "Invited";
+        }
     }
     
 

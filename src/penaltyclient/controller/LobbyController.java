@@ -23,7 +23,19 @@ public class LobbyController {
     public LobbyController(String username) {
         this.lobbyView = new LobbyView(username, this);
         this.lobbyView.setVisible(true);
+        loadPlayers();
+        
+    }
 
+    public void loadPlayers() {
+        lobbyView.addPlayer("player2", "Online", 1200);
+        lobbyView.addPlayer("player3", "Online", 980);
+        lobbyView.addPlayer("player4", "Đang bận", 1500);
+    }
+
+    public void handleInvite(String playerName) {
+        JOptionPane.showMessageDialog(null, "Đã gửi lời mời đến: " + playerName);
+        // TODO: sau này gửi lệnh mời tới server
     }
 
     
