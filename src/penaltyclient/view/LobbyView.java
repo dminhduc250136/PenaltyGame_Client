@@ -22,14 +22,14 @@ public class LobbyView extends JFrame {
 
     /** Creates new form LobbyView */
     public LobbyView(String username) {
-        setTitle("Game Lobby");
+        setTitle("Sảnh");
         setSize(400, 200);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        lblWelcome = new JLabel("Welcome: " + username + " | ");
-        btnStartGame = new JButton("Start");
-        btnLogout = new JButton("Logout");
+        lblWelcome = new JLabel("Xin chào: " + username + " | ");
+        btnStartGame = new JButton("Chơi");
+        btnLogout = new JButton("Đăng xuất");
 
         JPanel panel = new JPanel();
         panel.setLayout(new FlowLayout());

@@ -1,41 +1,20 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package penaltyclient.view;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Application;
-import javafx.application.Platform;
-import javafx.geometry.Insets;
-import javafx.geometry.Point3D;
 import javafx.geometry.Pos;
-import javafx.scene.*;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.effect.DropShadow;
-import javafx.scene.effect.GaussianBlur;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
-import javafx.scene.paint.*;
-import javafx.scene.shape.*;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
-import javafx.scene.transform.Rotate;
-import javafx.scene.transform.Scale;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
-import javafx.animation.*;
 import javafx.util.Duration;
-import java.util.ArrayList;
-import java.util.List;
 
-/**
- *
- * @author This PC
- */
-public class MatchView extends Application {
+public class MatchView1 extends Application {
+
     private Label timerLabel;
     private int timeLeft = 10;
     private Timeline countdown;
@@ -152,34 +131,30 @@ public class MatchView extends Application {
     public Button[][] getChoiceButtons() {
         return choiceButtons;
     }
+    
+        // Hiển thị vai trò hiện tại
+    public void updateRole(String text) {
+        timerLabel.setText(text); // tạm reuse chỗ timer cho demo
+    }
+
+    // Cập nhật đồng hồ từ server
+    public void updateTimer(int t) {
+        timerLabel.setText(String.valueOf(t));
+    }
+
+    // Khóa các nút khi đã chọn
+    public void disableButtons() {
+        for (Button[] row : choiceButtons)
+            for (Button b : row) b.setDisable(true);
+    }
+
+    // Reset trạng thái nút để chơi lượt mới
+    public void resetButtons() {
+        for (Button[] row : choiceButtons)
+            for (Button b : row) b.setDisable(false);
+    }
 
     public static void main(String[] args) {
         launch();
     }
-}
-
-    /** This method is called from within the constructor to
-
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    private void initComponents() {
-
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-
-        org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(0, 400, Short.MAX_VALUE)
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(0, 300, Short.MAX_VALUE)
-        );
-
-        pack();
-    }// </editor-fold>//GEN-END:initComponents
-
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    // End of variables declaration//GEN-END:variables
-
 }
