@@ -19,8 +19,6 @@ public class LoginView extends JFrame {
     private JPasswordField txtPassword;
     private JButton btnLogin;
     private JButton btnExit;
-    
-
 
     /** Creates new form LoginView */
     public LoginView(LoginController loginController) {

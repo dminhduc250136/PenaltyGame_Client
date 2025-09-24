@@ -7,18 +7,16 @@
 package penaltyclient;
 
 import penaltyclient.controller.LoginController;
-import penaltyclient.view.LoginView;
 /**
  *
  * @author This PC
  */
 public class PenaltyClient {
 
-    /**
-     * @param args the command line arguments
-     */
+  
     public static void main(String[] args) {
         LoginController loginController = new LoginController();
+        loginController.showLoginView();
     }
 
 }

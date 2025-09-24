@@ -50,18 +50,25 @@ public class LobbyView extends JFrame {
 
         // table player
 
-        String[] cols = {"Name", "Score", "Status", "Action"};
+        String[] cols = {"Name", "Status", "Score", "Action"};
         tableModel = new DefaultTableModel(cols, 0);
         tblPlayers = new JTable(tableModel);
 
         tblPlayers.getColumn("Action").setCellRenderer(new ButtonRenderer());
         tblPlayers.getColumn("Action").setCellEditor(new ButtonEditor(new JCheckBox(), lobbyController));
 
+        btnLogout.addActionListener(e -> this.lobbyController.handleLogout());
+
         add(new JScrollPane(tblPlayers), BorderLayout.CENTER);
     }
+
+
+
     public void addPlayer(String name, String status, int score) {
         tableModel.addRow(new Object[]{name, status, score, "Invite"});
     }
+
+
     class ButtonRenderer extends JButton implements TableCellRenderer {
         public ButtonRenderer() {
             setOpaque(true);

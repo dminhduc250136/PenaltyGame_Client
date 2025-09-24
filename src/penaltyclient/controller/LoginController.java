@@ -7,51 +7,57 @@
 package penaltyclient.controller;
 
 import penaltyclient.view.LoginView;
-import penaltyclient.view.LobbyView;
+import penaltyclient.model.SocketService;
 import javax.swing.*;
 import java.io.*;
 import java.net.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 /**
  *
  * @author This PC
  */
 public class LoginController {
     private LoginView loginView;
-
+    
     public LoginController() {
-        loginView = new LoginView(this);
-        loginView.setVisible(true);
+        this.loginView = new LoginView(this);
     }
 
-    /**
-     * @param args the command line arguments
-     */
+    public void showLoginView() {
+        this.loginView.setVisible(true);
+    }
+
+    public void hideLoginView() {
+        this.loginView.dispose();
+    }
+    
     public void login(String username, String password) {
 
-        try(Socket socket = new Socket("localhost", 12345)) {
-            ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-            ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
-
-            // send to server
+        try {
+            SocketService.connect("localhost", 12345);
+            
+            ObjectOutputStream out = SocketService.getOutputStream();
+            ObjectInputStream in = SocketService.getInputStream();
+                    
+            
             out.writeObject(username);
             out.writeObject(password);
 
-            // response
+        // response
             String response = (String) in.readObject();
             if(response.equals("SUCCESS")) {
                 JOptionPane.showMessageDialog(loginView, "Login Success");
-                
                 loginView.dispose();
-                
                 new LobbyController(username);
             }
             else {
                 JOptionPane.showMessageDialog(loginView, "Invalid information");
             }
-        }
-        catch(Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(loginView, "Error connecting to server!");
+        } catch (IOException ex) {
+            Logger.getLogger(LoginController.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(LoginController.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 }
