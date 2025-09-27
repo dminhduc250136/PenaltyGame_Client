@@ -68,6 +68,14 @@ public class LobbyController {
     }
         
     public void handleLogout() {
+        try {
+            SocketService.getOutputStream().writeObject("LOGOUT");
+            SocketService.getOutputStream().flush();
+        }
+        catch(Exception e) {
+            e.printStackTrace();
+        }
+        
         this.hideLobbyView();
         loginController.showLoginView();
     }

@@ -58,6 +58,6 @@ public class LoginController {
             Logger.getLogger(LoginController.class.getName()).log(Level.SEVERE, null, ex);
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(LoginController.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        }   
     }
 }
