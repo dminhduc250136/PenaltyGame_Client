@@ -14,8 +14,9 @@ import java.net.*;
  */
 public class SocketService {
     private static Socket socket;
-    private static ObjectInputStream in;
     private static ObjectOutputStream out;
+    private static ObjectInputStream in;
+
     
     public static void connect(String host, int port) throws IOException {
         socket = new Socket(host, port);

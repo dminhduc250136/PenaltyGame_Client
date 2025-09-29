@@ -25,15 +25,19 @@ public class LobbyController {
      */
     private LobbyView lobbyView;
     private LoginController loginController;
-    private Socket socket;
-    
+    private ObjectOutputStream out = SocketService.getOutputStream();
+    private ObjectInputStream in = SocketService.getInputStream();
+
+    private String username;
 
     public LobbyController(String username) {
         this.lobbyView = new LobbyView(username, this);
         this.lobbyView.setVisible(true);
         this.loginController = new LoginController();
-        this.socket = socket;
+        this.username = username;
         this.loadPlayers();
+        
+        new Thread(new ClientListener()).start();
     }
     public void showLobbyView() {
         this.lobbyView.setVisible(true);
@@ -45,17 +49,16 @@ public class LobbyController {
     public void loadPlayers() {
         
 
-        try {
-            ObjectInputStream in = SocketService.getInputStream();
-            ObjectOutputStream out = SocketService.getOutputStream();
+        try {   
             // gui yeu cau lay onlineusers
-
             out.writeObject("GET_ONLINE_USERS");
-            
-            
+            out.flush();
+
             // nhan du lieu
             List<String> users = (List<String>)in.readObject();
             for(String user : users) {
+                if(user.equals(username))
+                    continue;
                 this.lobbyView.addPlayer(user, "online", 0);
             }
         } catch (IOException ex) {
@@ -69,8 +72,8 @@ public class LobbyController {
         
     public void handleLogout() {
         try {
-            SocketService.getOutputStream().writeObject("LOGOUT");
-            SocketService.getOutputStream().flush();
+            out.writeObject("LOGOUT");
+            out.flush();
         }
         catch(Exception e) {
             e.printStackTrace();
@@ -81,9 +84,92 @@ public class LobbyController {
     }
 
     public void handleInvite(String playerName) {
-        JOptionPane.showMessageDialog(null, "Đã gửi lời mời đến: " + playerName);
-        // TODO: sau này gửi lệnh mời tới server
+        try {
+            out.writeObject("INVITE:" + playerName);
+            out.flush();
+        }
+        catch(Exception e) {
+            e.printStackTrace();
+        }
     }
+    
+    public class ClientListener implements Runnable {
 
+        @Override
+        public void run() {
+            try {
+                while(true) {
+                    Object obj = in.readObject();
+                    if(obj instanceof String) {
+                        String[] parts = ((String) obj).split(":");
+                        String command = parts[0];
+                        
+                        switch(command) {
+                            case "INVITE_FROM": {
+                                String invitePlayer = parts[1];
+                                String[] options = {"Accept", "Refuse"};
+
+                                
+                                int choice = JOptionPane.showOptionDialog(
+                                        lobbyView, // giao dien hien thi
+                                        "You have been invited by " + invitePlayer, //message
+                                        "Lời mời",                     // tiêu đề dialog
+                                        JOptionPane.DEFAULT_OPTION,    // kiểu option
+                                        JOptionPane.INFORMATION_MESSAGE, // icon
+                                        null,                          // icon custom
+                                        options,                       // text của các nút
+                                        options[0]   
+                                        );
+                                
+                                System.out.println(choice);
+                                
+                                // xử lý theo lựa chọn
+                                if (choice == 0) {
+                                    // người chơi bấm Đồng ý
+                                    sendMessage("INVITE_ACCEPT:" + invitePlayer);
+                                } else if (choice == 1) {
+                                    // người chơi bấm Từ chối
+                                    sendMessage("INVITE_DECLINE:" + invitePlayer);
+                                }
+                                break;
+                            }
+                            case "INVITE_SUCCESS": {
+                                JOptionPane.showMessageDialog(lobbyView, "Invited");
+                                break;
+                            }
+                            case "INVITE_FAIL": {
+                                JOptionPane.showMessageDialog(lobbyView, "Invite failed");
+                                break;
+                            }
+                            
+                            case "INVITE_RESPONSE_ACCEPT":
+                                String responder = parts[1];
+                                JOptionPane.showMessageDialog(lobbyView, "accepted by "  + responder);
+                                break;
+                            
+                            case "INVITE_RESPONSE_DECLINE":
+                                String responder2 = parts[1];
+                                JOptionPane.showMessageDialog(lobbyView, "declined by "  + responder2);
+                                break;
+                        }
+                    }
+                }
+            }
+            catch(Exception e) {
+                e.printStackTrace();
+            }
+        }
+        
+        
+        public void sendMessage(String msg) {
+            try {
+                out.writeObject(msg);
+                out.flush();
+            }
+            catch(Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
     
 }

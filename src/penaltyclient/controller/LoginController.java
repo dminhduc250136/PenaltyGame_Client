@@ -41,12 +41,11 @@ public class LoginController {
             ObjectInputStream in = SocketService.getInputStream();
                     
             
-            out.writeObject(username);
-            out.writeObject(password);
+            out.writeObject("LOGIN:" + username + ":" + password);
 
         // response
             String response = (String) in.readObject();
-            if(response.equals("SUCCESS")) {
+            if(response.equals("LOGIN_SUCCESS")) {
                 JOptionPane.showMessageDialog(loginView, "Login Success");
                 loginView.dispose();
                 new LobbyController(username);
