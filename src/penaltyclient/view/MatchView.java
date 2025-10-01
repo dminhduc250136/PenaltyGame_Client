@@ -48,10 +48,7 @@ public class MatchView extends Application {
         VBox root = new VBox();
         root.setStyle("-fx-background-color: #87CEEB;");
         
-        // Create game view
-        createGameView();
-        
-        // Create bottom UI
+        createGameView();        
         HBox bottomUI = createBottomUI();
         
         root.getChildren().addAll(gamePane, bottomUI);
@@ -92,16 +89,9 @@ public class MatchView extends Application {
         
         gamePane.getChildren().addAll(sky, stadium, field);
         
-        // Add field markings
         createFieldMarkings();
-        
-        // Create goal
         createGoal();
-        
-        // Create goalkeeper
         createGoalkeeper();
-        
-        // Create ball
         createBall();
     }
     
@@ -341,14 +331,8 @@ public class MatchView extends Application {
         messageLabel.setFont(Font.font("Arial", 14));
         messageLabel.setTextFill(Color.YELLOW);
         messageLabel.setMinWidth(250);
-        
-        // Website label
-        Label websiteLabel = new Label("www.redbullsacademy.com");
-        websiteLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-        websiteLabel.setTextFill(Color.WHITE);
-        websiteLabel.setStyle("-fx-font-style: italic;");
-        
-        bottomPanel.getChildren().addAll(scoreLabel, shootButton, messageLabel, websiteLabel);
+               
+        bottomPanel.getChildren().addAll(scoreLabel, shootButton, messageLabel);
         
         return bottomPanel;
     }
