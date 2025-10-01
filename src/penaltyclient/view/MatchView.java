@@ -6,18 +6,14 @@
 
 package penaltyclient.view;
 
+import javafx.animation.*;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
-import javafx.geometry.Point3D;
 import javafx.geometry.Pos;
 import javafx.scene.*;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.effect.DropShadow;
-import javafx.scene.effect.GaussianBlur;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.paint.*;
 import javafx.scene.shape.*;
@@ -26,140 +22,497 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Scale;
 import javafx.stage.Stage;
-import javafx.animation.*;
 import javafx.util.Duration;
-import java.util.ArrayList;
-import java.util.List;
 
-/**
- *
- * @author This PC
- */
+
 public class MatchView extends Application {
-    private Label timerLabel;
-    private int timeLeft = 10;
-    private Timeline countdown;
 
-    private Circle[] scoreP1 = new Circle[5];
-    private Circle[] scoreP2 = new Circle[5];
-
-    private Button[][] choiceButtons = new Button[2][3];
-
+    private static final double SCENE_WIDTH = 900;
+    private static final double SCENE_HEIGHT = 700;
+    
+    private Pane gamePane;
+    private Rectangle[] goalZones = new Rectangle[6];
+    private Circle ball;
+    private Ellipse goalkeeper;
+    private Label scoreLabel;
+    private Label messageLabel;
+    private int selectedZone = -1;
+    private int goals = 0;
+    private int attempts = 0;
+    
     @Override
-    public void start(Stage stage) {
-        BorderPane root = new BorderPane();
-
-        // ===== Timer at top =====
-        timerLabel = new Label("10");
-        timerLabel.setStyle("-fx-font-size: 28px; -fx-font-weight: bold;");
-        HBox timerBox = new HBox(timerLabel);
-        timerBox.setAlignment(Pos.CENTER);
-
-        // ===== Score panel at top-left =====
-        VBox scorePanel = new VBox(10);
-        scorePanel.setAlignment(Pos.TOP_LEFT);
-
-        HBox p1Row = new HBox(5);
-        Label p1Label = new Label("Player 1");
-        p1Row.getChildren().add(p1Label);
-        for (int i = 0; i < 5; i++) {
-            scoreP1[i] = createScoreDot();
-            p1Row.getChildren().add(scoreP1[i]);
+    public void start(Stage primaryStage) {
+        primaryStage.setTitle("Penalty Shootout - Football Game");
+        
+        // Main container
+        VBox root = new VBox();
+        root.setStyle("-fx-background-color: #87CEEB;");
+        
+        // Create game view
+        createGameView();
+        
+        // Create bottom UI
+        HBox bottomUI = createBottomUI();
+        
+        root.getChildren().addAll(gamePane, bottomUI);
+        
+        Scene scene = new Scene(root, SCENE_WIDTH, SCENE_HEIGHT);
+        setupControls(scene);
+        
+        primaryStage.setScene(scene);
+        primaryStage.setResizable(false);
+        primaryStage.show();
+    }
+    
+    private void createGameView() {
+        gamePane = new Pane();
+        gamePane.setPrefSize(SCENE_WIDTH, SCENE_HEIGHT - 100);
+        
+        // Sky background (1/3 of screen)
+        Rectangle sky = new Rectangle(0, 0, SCENE_WIDTH, 200);
+        Stop[] skyStops = new Stop[] {
+            new Stop(0, Color.rgb(135, 206, 235)),
+            new Stop(1, Color.rgb(173, 216, 230))
+        };
+        sky.setFill(new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE, skyStops));
+        
+        // Stadium/crowd area (simple representation)
+        Rectangle stadium = new Rectangle(0, 100, SCENE_WIDTH, 100);
+        stadium.setFill(Color.rgb(100, 100, 150, 0.3));
+        
+        // Grass field (2/3 of screen with perspective)
+        Polygon field = new Polygon();
+        field.getPoints().addAll(new Double[]{
+            0.0, 200.0,                    // Top left
+            SCENE_WIDTH, 200.0,            // Top right  
+            SCENE_WIDTH, SCENE_HEIGHT-100.0,  // Bottom right
+            0.0, SCENE_HEIGHT-100.0        // Bottom left
+        });
+        field.setFill(createGrassPattern());
+        
+        gamePane.getChildren().addAll(sky, stadium, field);
+        
+        // Add field markings
+        createFieldMarkings();
+        
+        // Create goal
+        createGoal();
+        
+        // Create goalkeeper
+        createGoalkeeper();
+        
+        // Create ball
+        createBall();
+    }
+    
+    private Paint createGrassPattern() {
+        // Grass with stripes
+        Stop[] stops = new Stop[] {
+            new Stop(0, Color.rgb(46, 125, 50)),
+            new Stop(0.15, Color.rgb(46, 125, 50)),
+            new Stop(0.15, Color.rgb(56, 142, 60)),
+            new Stop(0.3, Color.rgb(56, 142, 60)),
+            new Stop(0.3, Color.rgb(46, 125, 50)),
+            new Stop(0.45, Color.rgb(46, 125, 50)),
+            new Stop(0.45, Color.rgb(56, 142, 60)),
+            new Stop(0.6, Color.rgb(56, 142, 60)),
+            new Stop(0.6, Color.rgb(46, 125, 50)),
+            new Stop(0.75, Color.rgb(46, 125, 50)),
+            new Stop(0.75, Color.rgb(56, 142, 60)),
+            new Stop(0.9, Color.rgb(56, 142, 60)),
+            new Stop(0.9, Color.rgb(46, 125, 50)),
+            new Stop(1, Color.rgb(46, 125, 50))
+        };
+        return new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE, stops);
+    }
+    
+    private void createFieldMarkings() {
+        // Penalty area lines với perspective
+        Polygon penaltyArea = new Polygon();
+        penaltyArea.getPoints().addAll(new Double[]{
+            200.0, 250.0,   // Top left
+            700.0, 250.0,   // Top right
+            800.0, 400.0,   // Bottom right
+            100.0, 400.0    // Bottom left
+        });
+        penaltyArea.setFill(Color.TRANSPARENT);
+        penaltyArea.setStroke(Color.WHITE);
+        penaltyArea.setStrokeWidth(3);
+        
+        // Goal area (smaller box)
+        Polygon goalArea = new Polygon();
+        goalArea.getPoints().addAll(new Double[]{
+            320.0, 250.0,
+            580.0, 250.0,
+            620.0, 320.0,
+            280.0, 320.0
+        });
+        goalArea.setFill(Color.TRANSPARENT);
+        goalArea.setStroke(Color.WHITE);
+        goalArea.setStrokeWidth(3);
+        
+        // Penalty spot
+        Circle penaltySpot = new Circle(450, 420, 5);
+        penaltySpot.setFill(Color.WHITE);
+        
+        // Penalty arc
+        Arc penaltyArc = new Arc(450, 380, 100, 60, 0, 180);
+        penaltyArc.setType(ArcType.OPEN);
+        penaltyArc.setFill(Color.TRANSPARENT);
+        penaltyArc.setStroke(Color.WHITE);
+        penaltyArc.setStrokeWidth(3);
+        
+        gamePane.getChildren().addAll(penaltyArea, goalArea, penaltySpot, penaltyArc);
+    }
+    
+    private void createGoal() {
+        double goalX = 300;
+        double goalY = 150;
+        double goalWidth = 300;
+        double goalHeight = 100;
+        
+        // Goal frame
+        // Left post
+        Rectangle leftPost = new Rectangle(goalX - 5, goalY, 10, goalHeight);
+        leftPost.setFill(Color.WHITE);
+        leftPost.setStroke(Color.GRAY);
+        leftPost.setStrokeWidth(1);
+        
+        // Right post
+        Rectangle rightPost = new Rectangle(goalX + goalWidth - 5, goalY, 10, goalHeight);
+        rightPost.setFill(Color.WHITE);
+        rightPost.setStroke(Color.GRAY);
+        rightPost.setStrokeWidth(1);
+        
+        // Crossbar
+        Rectangle crossbar = new Rectangle(goalX, goalY - 5, goalWidth, 10);
+        crossbar.setFill(Color.WHITE);
+        crossbar.setStroke(Color.GRAY);
+        crossbar.setStrokeWidth(1);
+        
+        // Net background
+        Rectangle netBg = new Rectangle(goalX, goalY, goalWidth, goalHeight);
+        netBg.setFill(Color.rgb(200, 200, 200, 0.3));
+        
+        // Net pattern - vertical lines
+        for (int i = 0; i <= 15; i++) {
+            Line line = new Line(
+                goalX + i * 20, goalY,
+                goalX + i * 20, goalY + goalHeight
+            );
+            line.setStroke(Color.LIGHTGRAY);
+            line.setStrokeWidth(1);
+            line.setOpacity(0.5);
+            gamePane.getChildren().add(line);
         }
-
-        HBox p2Row = new HBox(5);
-        Label p2Label = new Label("Player 2");
-        p2Row.getChildren().add(p2Label);
-        for (int i = 0; i < 5; i++) {
-            scoreP2[i] = createScoreDot();
-            p2Row.getChildren().add(scoreP2[i]);
+        
+        // Net pattern - horizontal lines
+        for (int i = 0; i <= 5; i++) {
+            Line line = new Line(
+                goalX, goalY + i * 20,
+                goalX + goalWidth, goalY + i * 20
+            );
+            line.setStroke(Color.LIGHTGRAY);
+            line.setStrokeWidth(1);
+            line.setOpacity(0.5);
+            gamePane.getChildren().add(line);
         }
-
-        scorePanel.getChildren().addAll(p1Row, p2Row);
-
-        // Top wrapper
-        BorderPane topPanel = new BorderPane();
-        topPanel.setCenter(timerBox);
-        topPanel.setLeft(scorePanel);
-        root.setTop(topPanel);
-
-        // ===== Center panel: 6 buttons grid =====
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
-        grid.setAlignment(Pos.CENTER);
-
-        for (int r = 0; r < 2; r++) {
-            for (int c = 0; c < 3; c++) {
-                Button btn = new Button((r * 3 + c + 1) + "");
-                btn.setPrefSize(80, 80);
-                choiceButtons[r][c] = btn;
-                grid.add(btn, c, r);
+        
+        // Create 6 shooting zones (3 columns x 2 rows)
+        double zoneWidth = goalWidth / 3;
+        double zoneHeight = goalHeight / 2;
+        
+        for (int row = 0; row < 2; row++) {
+            for (int col = 0; col < 3; col++) {
+                final int index = row * 3 + col;
+                
+                goalZones[index] = new Rectangle(
+                    goalX + col * zoneWidth,
+                    goalY + row * zoneHeight,
+                    zoneWidth,
+                    zoneHeight
+                );
+                
+                goalZones[index].setFill(Color.TRANSPARENT);
+                goalZones[index].setStroke(Color.YELLOW);
+                goalZones[index].setStrokeWidth(2);
+                goalZones[index].setOpacity(0);
+                
+                // Zone labels
+                String[] zoneNames = {"Top Left", "Top Center", "Top Right", 
+                                     "Bottom Left", "Bottom Center", "Bottom Right"};
+                
+                // Mouse events
+                final int zoneIndex = index;
+                goalZones[index].setOnMouseEntered(e -> {
+                    if (selectedZone == -1) {
+                        goalZones[zoneIndex].setOpacity(0.3);
+                        goalZones[zoneIndex].setFill(Color.rgb(255, 255, 0, 0.2));
+                        messageLabel.setText("Aim: " + zoneNames[zoneIndex]);
+                    }
+                });
+                
+                goalZones[index].setOnMouseExited(e -> {
+                    if (selectedZone == -1 || selectedZone != zoneIndex) {
+                        goalZones[zoneIndex].setOpacity(0);
+                        goalZones[zoneIndex].setFill(Color.TRANSPARENT);
+                    }
+                    if (selectedZone == -1) {
+                        messageLabel.setText("Click on a goal zone to shoot!");
+                    }
+                });
+                
+                goalZones[index].setOnMouseClicked(e -> {
+                    if (selectedZone == -1) {
+                        selectZone(zoneIndex);
+                    }
+                });
+                
+                gamePane.getChildren().add(goalZones[index]);
             }
         }
-
-        root.setCenter(grid);
-
-        Scene scene = new Scene(root, 600, 400);
-        stage.setScene(scene);
-        stage.setTitle("Penalty Game");
-        stage.show();
-
-        startCountdown();
-
-        // Demo test: đổi màu kết quả
-        Timeline demo = new Timeline(
-                new KeyFrame(Duration.seconds(2), e -> setScore(1, 0, true)),
-                new KeyFrame(Duration.seconds(4), e -> setScore(2, 0, false))
+        
+        gamePane.getChildren().addAll(netBg, leftPost, rightPost, crossbar);
+    }
+    
+    private void createGoalkeeper() {
+        // Goalkeeper in center of goal
+        goalkeeper = new Ellipse(450, 200, 15, 20);
+        goalkeeper.setFill(Color.ORANGE);
+        goalkeeper.setStroke(Color.DARKORANGE);
+        goalkeeper.setStrokeWidth(2);
+        
+        // Arms
+        Line leftArm = new Line(435, 200, 420, 190);
+        leftArm.setStroke(Color.ORANGE);
+        leftArm.setStrokeWidth(3);
+        
+        Line rightArm = new Line(465, 200, 480, 190);
+        rightArm.setStroke(Color.ORANGE);
+        rightArm.setStrokeWidth(3);
+        
+        gamePane.getChildren().addAll(goalkeeper, leftArm, rightArm);
+    }
+    
+    private void createBall() {
+        // Ball at penalty spot
+        ball = new Circle(450, 420, 12);
+        
+        // Soccer ball pattern
+        Stop[] ballStops = new Stop[] {
+            new Stop(0, Color.WHITE),
+            new Stop(0.9, Color.rgb(240, 240, 240)),
+            new Stop(1, Color.rgb(200, 200, 200))
+        };
+        ball.setFill(new RadialGradient(0, 0, 0.3, 0.3, 0.5, true, 
+                                       CycleMethod.NO_CYCLE, ballStops));
+        ball.setStroke(Color.BLACK);
+        ball.setStrokeWidth(1);
+        
+        gamePane.getChildren().add(ball);
+    }
+    
+    private HBox createBottomUI() {
+        HBox bottomPanel = new HBox(30);
+        bottomPanel.setAlignment(Pos.CENTER);
+        bottomPanel.setPadding(new Insets(20));
+        bottomPanel.setStyle("-fx-background-color: rgba(0, 0, 0, 0.7);");
+        bottomPanel.setPrefHeight(100);
+        
+        // Score display
+        scoreLabel = new Label("Score: 0/0");
+        scoreLabel.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+        scoreLabel.setTextFill(Color.WHITE);
+        
+        // Shoot button
+        Button shootButton = new Button("SHOOT!");
+        shootButton.setPrefSize(120, 40);
+        shootButton.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        shootButton.setStyle(
+            "-fx-background-color: #4CAF50; " +
+            "-fx-text-fill: white; " +
+            "-fx-background-radius: 5; " +
+            "-fx-cursor: hand;"
         );
-        demo.play();
+        shootButton.setOnAction(e -> performShoot());
+        
+        // Message label
+        messageLabel = new Label("Click on a goal zone to shoot!");
+        messageLabel.setFont(Font.font("Arial", 14));
+        messageLabel.setTextFill(Color.YELLOW);
+        messageLabel.setMinWidth(250);
+        
+        // Website label
+        Label websiteLabel = new Label("www.redbullsacademy.com");
+        websiteLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        websiteLabel.setTextFill(Color.WHITE);
+        websiteLabel.setStyle("-fx-font-style: italic;");
+        
+        bottomPanel.getChildren().addAll(scoreLabel, shootButton, messageLabel, websiteLabel);
+        
+        return bottomPanel;
     }
-
-    private Circle createScoreDot() {
-        Circle circle = new Circle(8);
-        circle.setFill(Color.GRAY);
-        return circle;
-    }
-
-    // ===== Countdown logic =====
-    public void startCountdown() {
-        timeLeft = 10;
-        timerLabel.setText("10");
-        if (countdown != null) countdown.stop();
-
-        countdown = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
-            timeLeft--;
-            timerLabel.setText(String.valueOf(timeLeft));
-            if (timeLeft <= 0) {
-                countdown.stop();
-                // TODO: random chọn nếu chưa click
+    
+    private void selectZone(int index) {
+        selectedZone = index;
+        
+        // Highlight selected zone
+        for (int i = 0; i < 6; i++) {
+            if (i == index) {
+                goalZones[i].setOpacity(0.5);
+                goalZones[i].setFill(Color.rgb(0, 255, 0, 0.3));
+                goalZones[i].setStroke(Color.LIME);
+            } else {
+                goalZones[i].setOpacity(0);
+                goalZones[i].setFill(Color.TRANSPARENT);
+                goalZones[i].setStroke(Color.YELLOW);
             }
-        }));
-        countdown.setCycleCount(10);
-        countdown.play();
+        }
+        
+        messageLabel.setText("Target selected! Press SPACE or click SHOOT!");
+        messageLabel.setTextFill(Color.LIME);
     }
-
-    public void stopCountdown() {
-        if (countdown != null) countdown.stop();
+    
+    private void performShoot() {
+        if (selectedZone == -1) {
+            messageLabel.setText("Please select a target zone first!");
+            messageLabel.setTextFill(Color.RED);
+            return;
+        }
+        
+        attempts++;
+        
+        // Calculate target position
+        double goalX = 300;
+        double goalY = 150;
+        double zoneWidth = 300.0 / 3;
+        double zoneHeight = 100.0 / 2;
+        
+        int row = selectedZone / 3;
+        int col = selectedZone % 3;
+        
+        double targetX = goalX + col * zoneWidth + zoneWidth / 2;
+        double targetY = goalY + row * zoneHeight + zoneHeight / 2;
+        
+        // Add some randomness
+        targetX += (Math.random() - 0.5) * 20;
+        targetY += (Math.random() - 0.5) * 10;
+        
+        // Ball shooting animation
+        Timeline shootAnimation = new Timeline();
+        
+        KeyFrame start = new KeyFrame(Duration.ZERO,
+            new KeyValue(ball.centerXProperty(), 450),
+            new KeyValue(ball.centerYProperty(), 420),
+            new KeyValue(ball.radiusProperty(), 12)
+        );
+        
+        KeyFrame mid = new KeyFrame(Duration.millis(300),
+            new KeyValue(ball.centerXProperty(), targetX),
+            new KeyValue(ball.centerYProperty(), targetY - 30),
+            new KeyValue(ball.radiusProperty(), 8)
+        );
+        
+        KeyFrame end = new KeyFrame(Duration.millis(600),
+            new KeyValue(ball.centerXProperty(), targetX),
+            new KeyValue(ball.centerYProperty(), targetY),
+            new KeyValue(ball.radiusProperty(), 6)
+        );
+        
+        shootAnimation.getKeyFrames().addAll(start, mid, end);
+        
+        // Goalkeeper animation
+        boolean saved = Math.random() < 0.3; // 30% save chance
+        
+        if (saved) {
+            double keeperX = targetX;
+            Timeline keeperAnimation = new Timeline(
+                new KeyFrame(Duration.millis(400),
+                    new KeyValue(goalkeeper.centerXProperty(), keeperX)
+                )
+            );
+            keeperAnimation.play();
+        }
+        
+        shootAnimation.setOnFinished(e -> {
+            if (!saved) {
+                goals++;
+                messageLabel.setText("GOAL! Great shot!");
+                messageLabel.setTextFill(Color.LIME);
+            } else {
+                messageLabel.setText("SAVED! The goalkeeper stopped it!");
+                messageLabel.setTextFill(Color.RED);
+            }
+            
+            scoreLabel.setText("Score: " + goals + "/" + attempts);
+            
+            // Reset after delay
+            PauseTransition pause = new PauseTransition(Duration.seconds(2));
+            pause.setOnFinished(ev -> resetField());
+            pause.play();
+        });
+        
+        shootAnimation.play();
     }
-
-    // ===== Score update =====
-    public void setScore(int player, int turn, boolean goal) {
-        Circle dot = (player == 1) ? scoreP1[turn] : scoreP2[turn];
-        dot.setFill(goal ? Color.GREEN : Color.RED);
+    
+    private void resetField() {
+        // Reset ball
+        ball.setCenterX(450);
+        ball.setCenterY(420);
+        ball.setRadius(12);
+        
+        // Reset goalkeeper
+        goalkeeper.setCenterX(450);
+        
+        // Clear selection
+        selectedZone = -1;
+        for (Rectangle zone : goalZones) {
+            zone.setOpacity(0);
+            zone.setFill(Color.TRANSPARENT);
+            zone.setStroke(Color.YELLOW);
+        }
+        
+        messageLabel.setText("Click on a goal zone to shoot!");
+        messageLabel.setTextFill(Color.YELLOW);
     }
-
-    public Button[][] getChoiceButtons() {
-        return choiceButtons;
+    
+    private void setupControls(Scene scene) {
+        scene.setOnKeyPressed(e -> {
+            switch (e.getCode()) {
+                case SPACE:
+                    performShoot();
+                    break;
+                case R:
+                    resetField();
+                    goals = 0;
+                    attempts = 0;
+                    scoreLabel.setText("Score: 0/0");
+                    break;
+                case ESCAPE:
+                    Platform.exit();
+                    break;
+                default:
+                    // Number keys 1-6 for quick zone selection
+                    if (e.getCode().isDigitKey()) {
+                        String text = e.getText();
+                        try {
+                            int zone = Integer.parseInt(text) - 1;
+                            if (zone >= 0 && zone < 6) {
+                                selectZone(zone);
+                            }
+                        } catch (NumberFormatException ex) {
+                            // Ignore
+                        }
+                    }
+                    break;
+            }
+        });
     }
-
+    
     public static void main(String[] args) {
-        launch();
+        launch(args);
     }
 }
-
-    /** This method is called from within the constructor to
-
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
@@ -182,4 +535,3 @@ public class MatchView extends Application {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     // End of variables declaration//GEN-END:variables
 
-}
