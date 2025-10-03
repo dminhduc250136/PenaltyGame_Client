@@ -141,17 +141,18 @@ public class MatchView extends Application {
         goalArea.setStroke(Color.WHITE);
         goalArea.setStrokeWidth(3);
         
-        // Penalty spot
-        Circle penaltySpot = new Circle(450, 420, 5);
+        // Penalty spot (chấm phạt đền) - đặt trong vòng cấm
+        Circle penaltySpot = new Circle(450, 350, 5);  // đưa lên trong penaltyArea
         penaltySpot.setFill(Color.WHITE);
-        
-        // Penalty arc
-        Arc penaltyArc = new Arc(450, 380, 100, 60, 0, 180);
+
+        // Penalty arc (nửa vòng tròn) - nằm ngoài vòng cấm
+        Arc penaltyArc = new Arc(450, 400, 100, 60, 0, -180); 
+        // tâm đặt ở chính giữa vạch 16m50 (y = 250), vẽ ra ngoài
         penaltyArc.setType(ArcType.OPEN);
         penaltyArc.setFill(Color.TRANSPARENT);
         penaltyArc.setStroke(Color.WHITE);
         penaltyArc.setStrokeWidth(3);
-        
+
         gamePane.getChildren().addAll(penaltyArea, goalArea, penaltySpot, penaltyArc);
     }
     
@@ -286,7 +287,7 @@ public class MatchView extends Application {
     
     private void createBall() {
         // Ball at penalty spot
-        ball = new Circle(450, 420, 12);
+        ball = new Circle(450, 350, 12);
         
         // Soccer ball pattern
         Stop[] ballStops = new Stop[] {
@@ -387,7 +388,7 @@ public class MatchView extends Application {
         
         KeyFrame start = new KeyFrame(Duration.ZERO,
             new KeyValue(ball.centerXProperty(), 450),
-            new KeyValue(ball.centerYProperty(), 420),
+            new KeyValue(ball.centerYProperty(), 350),
             new KeyValue(ball.radiusProperty(), 12)
         );
         
@@ -442,7 +443,7 @@ public class MatchView extends Application {
     private void resetField() {
         // Reset ball
         ball.setCenterX(450);
-        ball.setCenterY(420);
+        ball.setCenterY(350);
         ball.setRadius(12);
         
         // Reset goalkeeper
