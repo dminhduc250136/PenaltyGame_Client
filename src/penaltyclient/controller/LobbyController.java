@@ -7,12 +7,11 @@
 package penaltyclient.controller;
 
 import penaltyclient.view.LobbyView;
-import javax.swing.*;
 import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import penaltyclient.model.ClientListener;
 import penaltyclient.model.SocketService;
 /**
  *
@@ -37,7 +36,7 @@ public class LobbyController {
         this.username = username;
         this.loadPlayers();
         
-        new Thread(new ClientListener()).start();
+        new Thread(new ClientListener(this)).start();
     }
     public void showLobbyView() {
         this.lobbyView.setVisible(true);
@@ -69,6 +68,16 @@ public class LobbyController {
 
         
     }
+
+    public LobbyView getLobbyView() {
+        return lobbyView;
+    }
+
+    public void setLobbyView(LobbyView lobbyView) {
+        this.lobbyView = lobbyView;
+    }
+    
+    
         
     public void handleLogout() {
         try {
@@ -92,84 +101,17 @@ public class LobbyController {
             e.printStackTrace();
         }
     }
-    
-    public class ClientListener implements Runnable {
 
-        @Override
-        public void run() {
-            try {
-                while(true) {
-                    Object obj = in.readObject();
-                    if(obj instanceof String) {
-                        String[] parts = ((String) obj).split(":");
-                        String command = parts[0];
-                        
-                        switch(command) {
-                            case "INVITE_FROM": {
-                                String invitePlayer = parts[1];
-                                String[] options = {"Accept", "Refuse"};
-
-                                
-                                int choice = JOptionPane.showOptionDialog(
-                                        lobbyView, // giao dien hien thi
-                                        "You have been invited by " + invitePlayer, //message
-                                        "Lời mời",                     // tiêu đề dialog
-                                        JOptionPane.DEFAULT_OPTION,    // kiểu option
-                                        JOptionPane.INFORMATION_MESSAGE, // icon
-                                        null,                          // icon custom
-                                        options,                       // text của các nút
-                                        options[0]   
-                                        );
-                                
-                                System.out.println(choice);
-                                
-                                // xử lý theo lựa chọn
-                                if (choice == 0) {
-                                    // người chơi bấm Đồng ý
-                                    sendMessage("INVITE_ACCEPT:" + invitePlayer);
-                                } else if (choice == 1) {
-                                    // người chơi bấm Từ chối
-                                    sendMessage("INVITE_DECLINE:" + invitePlayer);
-                                }
-                                break;
-                            }
-                            case "INVITE_SUCCESS": {
-                                JOptionPane.showMessageDialog(lobbyView, "Invited");
-                                break;
-                            }
-                            case "INVITE_FAIL": {
-                                JOptionPane.showMessageDialog(lobbyView, "Invite failed");
-                                break;
-                            }
-                            
-                            case "INVITE_RESPONSE_ACCEPT":
-                                String responder = parts[1];
-                                JOptionPane.showMessageDialog(lobbyView, "accepted by "  + responder);
-                                break;
-                            
-                            case "INVITE_RESPONSE_DECLINE":
-                                String responder2 = parts[1];
-                                JOptionPane.showMessageDialog(lobbyView, "declined by "  + responder2);
-                                break;
-                        }
-                    }
-                }
-            }
-            catch(Exception e) {
-                e.printStackTrace();
-            }
-        }
-        
-        
-        public void sendMessage(String msg) {
-            try {
-                out.writeObject(msg);
-                out.flush();
-            }
-            catch(Exception e) {
-                e.printStackTrace();
-            }
-        }
+    public String getUsername() {
+        return username;
     }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+    
+    
+    
+    
     
 }

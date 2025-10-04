@@ -6,16 +6,25 @@
 
 package penaltyclient.controller;
 
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import penaltyclient.model.SocketService;
+import penaltyclient.view.MatchView;
+
 /**
  *
  * @author This PC
  */
 public class MatchController {
-
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[]){
-        // TODO code application logic here
+    private int matchId;
+    private ObjectOutputStream out = SocketService.getOutputStream();
+    private ObjectInputStream in = SocketService.getInputStream();
+    private MatchView matchView;
+    
+    public MatchController(int matchId, String username) {
+        this.matchId = matchId;
+        matchView = new MatchView(matchId, username, this);
+        matchView.setVisible(true);
     }
+
 }
