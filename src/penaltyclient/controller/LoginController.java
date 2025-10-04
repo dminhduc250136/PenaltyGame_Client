@@ -7,50 +7,56 @@
 package penaltyclient.controller;
 
 import penaltyclient.view.LoginView;
+import penaltyclient.model.SocketService;
 import javax.swing.*;
 import java.io.*;
 import java.net.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 /**
  *
  * @author This PC
  */
 public class LoginController {
     private LoginView loginView;
-
-    public LoginController(LoginView view) {
-        this.loginView = view;
-
-        loginView.btnLogin.addActionListener(e -> login());
-        loginView.btnExit.addActionListener(e -> System.exit(0));
+    
+    public LoginController() {
+        this.loginView = new LoginView(this);
     }
 
-    /**
-     * @param args the command line arguments
-     */
-    private void login() {
-        String user = loginView.txtUsername.getText();
-        String pass = new String(loginView.txtPassword.getPassword());
+    public void showLoginView() {
+        this.loginView.setVisible(true);
+    }
 
-        try(Socket socket = new Socket("localhost", 12345)) {
-            ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-            ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+    public void hideLoginView() {
+        this.loginView.dispose();
+    }
+    
+    public void login(String username, String password) {
 
-            // send to server
-            out.writeObject(user);
-            out.writeObject(pass);
+        try {
+            SocketService.connect("localhost", 12345);
+            
+            ObjectOutputStream out = SocketService.getOutputStream();
+            ObjectInputStream in = SocketService.getInputStream();
+                    
+            
+            out.writeObject("LOGIN:" + username + ":" + password);
 
-            // response
+        // response
             String response = (String) in.readObject();
-            if(response.equals("SUCCESS")) {
+            if(response.equals("LOGIN_SUCCESS")) {
                 JOptionPane.showMessageDialog(loginView, "Login Success");
+                loginView.dispose();
+                new LobbyController(username);
             }
             else {
                 JOptionPane.showMessageDialog(loginView, "Invalid information");
             }
-        }
-        catch(Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(loginView, "Error connecting to server!");
-        }
+        } catch (IOException ex) {
+            Logger.getLogger(LoginController.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(LoginController.class.getName()).log(Level.SEVERE, null, ex);
+        }   
     }
 }
