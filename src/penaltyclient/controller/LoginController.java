@@ -11,6 +11,9 @@ import penaltyclient.view.LobbyView;
 import javax.swing.*;
 import java.io.*;
 import java.net.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
 /**
  *
  * @author This PC
@@ -18,11 +21,12 @@ import java.net.*;
 public class LoginController {
     private LoginView loginView;
 
-    public LoginController(LoginView view) {
-        this.loginView = view;
+    public LoginController(LoginView loginView) {
+        this.loginView = loginView;
 
-        loginView.btnLogin.addActionListener(e -> login());
-        loginView.btnExit.addActionListener(e -> System.exit(0));
+        this.loginView.addLoginListener(e -> login());
+        System.out.println("Login button clicked!");
+        //loginView.btnExit.addActionListener(e -> System.exit(0));
     }
 
     /**
@@ -31,7 +35,8 @@ public class LoginController {
     private void login() {
         String user = loginView.txtUsername.getText();
         String pass = new String(loginView.txtPassword.getPassword());
-
+        System.out.println(user + " " + pass);
+        
         try(Socket socket = new Socket("localhost", 12345)) {
             ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
             ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
@@ -39,9 +44,11 @@ public class LoginController {
             // send to server
             out.writeObject(user);
             out.writeObject(pass);
+            System.out.println("sending " + user + " " + pass + " to server...");
 
             // response
             String response = (String) in.readObject();
+            System.out.println("received " + response + " from server!");
             if(response.equals("SUCCESS")) {
                 JOptionPane.showMessageDialog(loginView, "Login Success");
                 

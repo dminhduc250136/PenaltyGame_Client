@@ -19,6 +19,7 @@ public class PenaltyClient {
      */
     public static void main(String[] args) {
         LoginView view = new LoginView();
+        view.setVisible(true);
         LoginController loginController = new LoginController(view);
     }
 
