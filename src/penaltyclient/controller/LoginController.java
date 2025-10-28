@@ -35,7 +35,7 @@ public class LoginController {
     public void login(String username, String password) {
 
         try {
-            SocketService.connect("localhost", 12345);
+            SocketService.connect("localhost", 12346);
             
             ObjectOutputStream out = SocketService.getOutputStream();
             ObjectInputStream in = SocketService.getInputStream();
