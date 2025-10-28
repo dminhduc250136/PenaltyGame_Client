@@ -5,12 +5,15 @@
  */
 package penaltyclient.model;
 
-import javax.swing.JOptionPane;
-import java.io.*;
+import java.io.ObjectInputStream;
+import javafx.application.Platform; // Import thư viện JavaFX
 import penaltyclient.controller.LobbyController;
+import java.io.IOException;
+import java.io.ObjectOutputStream; // Cần import
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import penaltyclient.controller.MatchController;
-import penaltyclient.view.LobbyView;
-/**
+        /**
  *
  * @author This PC
  */
@@ -18,12 +21,10 @@ public class ClientListener implements Runnable {
     private ObjectOutputStream out = SocketService.getOutputStream();
     private ObjectInputStream in = SocketService.getInputStream();
     private LobbyController lobbyController;
-    private LobbyView lobbyView;
     private MatchController matchController;
     
     public ClientListener(LobbyController lobbyController) {
         this.lobbyController = lobbyController;
-        this.lobbyView = this.lobbyController.getLobbyView();
     }
     
     @Override
@@ -38,53 +39,66 @@ public class ClientListener implements Runnable {
                     switch(command) {
                         case "INVITE_FROM": {
                             String invitePlayer = parts[1];
-                            String[] options = {"Accept", "Refuse"};
-
-
-                            int choice = JOptionPane.showOptionDialog(
-                                    lobbyView, // giao dien hien thi
-                                    "You have been invited by " + invitePlayer, //message
-                                    "Lời mời",                     // tiêu đề dialog
-                                    JOptionPane.DEFAULT_OPTION,    // kiểu option
-                                    JOptionPane.INFORMATION_MESSAGE, // icon
-                                    null,                          // icon custom
-                                    options,                       // text của các nút
-                                    options[0]   
-                                    );
-
-
-                            // xử lý theo lựa chọn
-                            if (choice == 0) {
-                                // người chơi bấm Đồng ý
-                                sendMessage("INVITE_ACCEPT:" + invitePlayer);
-                            } else if (choice == 1) {
-                                // người chơi bấm Từ chối
-                                sendMessage("INVITE_DECLINE:" + invitePlayer);
-                            }
+                            
+                            // Yêu cầu LobbyController hiển thị Alert trên luồng JavaFX
+                            Platform.runLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    lobbyController.showInvitationAlert(invitePlayer);
+                                }
+                            });
                             break;
                         }
                         case "INVITE_SUCCESS": {
-                            JOptionPane.showMessageDialog(lobbyView, "Invited");
+                            // Yêu cầu LobbyController hiển thị thông báo
+                            Platform.runLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    lobbyController.showAlert("Invitation Sent", "Invited successfully!");
+                                }
+                            });
                             break;
                         }
                         case "INVITE_FAIL": {
-                            JOptionPane.showMessageDialog(lobbyView, "Invite failed");
+                             Platform.runLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    lobbyController.showAlert("Invitation Failed", "Invite failed. The user might be busy.");
+                                }
+                            });
                             break;
                         }
-
-                        case "INVITE_RESPONSE_ACCEPT":
+                        case "INVITE_RESPONSE_ACCEPT": {
                             String responder = parts[1];
-                            JOptionPane.showMessageDialog(lobbyView, "accepted by "  + responder);
+                            Platform.runLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    lobbyController.showAlert("Invitation Accepted", responder + " accepted your challenge!");
+                                }
+                            });
                             break;
-
-                        case "INVITE_RESPONSE_DECLINE":
+                        }
+                        case "INVITE_RESPONSE_DECLINE": {
                             String responder2 = parts[1];
-                            JOptionPane.showMessageDialog(lobbyView, "declined by "  + responder2);
+                            Platform.runLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    lobbyController.showAlert("Invitation Declined", responder2 + " declined your challenge.");
+                                }
+                            });
                             break;
-                        case "START_MATCH":
+                        }
+                        case "START_MATCH": {
                             int matchId = Integer.parseInt(parts[1]);
-                            matchController = new MatchController(matchId, lobbyController.getUsername());
-                            lobbyController.hideLobbyView();
+                            // Yêu cầu LobbyController bắt đầu trận đấu
+                             Platform.runLater(new Runnable() {
+                                @Override
+                                public void run() {
+//                                    lobbyController.startMatch(matchId);
+                                }
+                            });
+                            break;
+                        }
                     }
                 }
             }
