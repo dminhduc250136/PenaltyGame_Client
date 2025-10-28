@@ -12,7 +12,6 @@ import penaltyclient.controller.LoginController;
  * @author This PC
  */
 public class PenaltyClient {
-
     
     public static void main(String[] args) {
         LoginController loginController = new LoginController();

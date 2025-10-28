@@ -31,7 +31,7 @@ public class LoginView extends JFrame {
         txtPassword = new JPasswordField();
 
         btnLogin = new JButton("Login");
-//        btnExit = new JButton("Exit");
+        btnExit = new JButton("Exit");
 
 
         panel.add(lbUsername);
@@ -39,7 +39,7 @@ public class LoginView extends JFrame {
         panel.add(lbPassword);
         panel.add(txtPassword);
         panel.add(btnLogin);
-//        panel.add(btnExit);
+        panel.add(btnExit);
 
         add(panel);
 
