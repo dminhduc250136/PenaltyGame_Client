@@ -11,15 +11,13 @@ import penaltyclient.model.SocketService;
 import javax.swing.*;
 import java.io.*;
 import java.net.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 /**
  *
  * @author This PC
  */
 public class LoginController {
     private LoginView loginView;
-    
+
     public LoginController() {
         this.loginView = new LoginView(this);
     }

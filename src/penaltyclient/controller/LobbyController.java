@@ -30,6 +30,7 @@ public class LobbyController {
     private String username;
 
     public LobbyController(String username) {
+
         this.lobbyView = new LobbyView(username, this);
         this.lobbyView.setVisible(true);
         this.loginController = new LoginController();
@@ -109,9 +110,4 @@ public class LobbyController {
     public void setUsername(String username) {
         this.username = username;
     }
-    
-    
-    
-    
-    
 }

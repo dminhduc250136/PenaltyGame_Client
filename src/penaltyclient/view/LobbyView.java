@@ -23,9 +23,7 @@ public class LobbyView extends JFrame {
     private LobbyController lobbyController;
 
 
-    /** Creates new form LobbyView */
-    public LobbyView(String username, LobbyController controller) {
-        this.lobbyController = controller;
+    public LobbyView(String username) {
         setTitle("Lobby");
         setSize(600, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -72,9 +70,13 @@ public class LobbyView extends JFrame {
             setOpaque(true);
         }
         @Override
-        public Component getTableCellRendererComponent(JTable table, Object value,
-                                                       boolean isSelected, boolean hasFocus,
-                                                       int row, int column) {
+        public Component getTableCellRendererComponent(
+                JTable table, 
+                Object value,
+                boolean isSelected, 
+                boolean hasFocus,
+                int row, 
+                int column) {
             setText("Invite");
             return this;
         }
@@ -94,8 +96,12 @@ public class LobbyView extends JFrame {
         }
 
         @Override
-        public Component getTableCellEditorComponent(JTable table, Object value,
-                                                     boolean isSelected, int row, int column) {
+        public Component getTableCellEditorComponent(
+                JTable table, 
+                Object value,
+                boolean isSelected, 
+                int row, 
+                int column) {
             this.row = row;
             return button;
         }
