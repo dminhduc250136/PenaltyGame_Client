@@ -154,7 +154,6 @@ public class MatchView extends Application {
         // Penalty spot (chấm phạt đền) - đặt trong vòng cấm
         Circle penaltySpot = new Circle(450, 350, 5);  // đưa lên trong penaltyArea
         penaltySpot.setFill(Color.WHITE);
-
         // Penalty arc (nửa vòng tròn) - nằm ngoài vòng cấm
         Arc penaltyArc = new Arc(450, 400, 100, 60, 0, -180); 
         // tâm đặt ở chính giữa vạch 16m50 (y = 250), vẽ ra ngoài
@@ -540,8 +539,10 @@ public class MatchView extends Application {
     public static void main(String[] args) {
         launch(args);
     }
-}
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
+    @SuppressWarnings("unchecked")
+    // <editor-fold defaultstate="collapsed" desc=" Generated Code ">//GEN-BEGIN:initComponents
+>>>>>>> origin/main
     private void initComponents() {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
@@ -558,8 +559,14 @@ public class MatchView extends Application {
         );
 
         pack();
-    }// </editor-fold>//GEN-END:initComponents
+<<<<<<< HEAD
+    }// </editor-fold>                        
+
+=======
+    }
+    // </editor-fold>//GEN-END:initComponents
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     // End of variables declaration//GEN-END:variables
 
+}

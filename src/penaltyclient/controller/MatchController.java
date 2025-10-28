@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 package penaltyclient.controller;
 
 import javafx.application.Platform;
@@ -5,7 +6,7 @@ import javafx.animation.Timeline;
 import javafx.animation.KeyFrame;
 import javafx.util.Duration;
 import penaltyclient.view.MatchView;
-import network.ClientNetwork;
+//import network.ClientNetwork;
 
 public class MatchController {
     private MatchView matchView;
