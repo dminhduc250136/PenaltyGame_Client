@@ -10,7 +10,7 @@ import penaltyclient.view.MatchView;
 
 public class MatchController {
     private MatchView matchView;
-    private ClientNetwork network;
+//    private ClientNetwork network;
     private String playerName;
     private String opponentName;
     
@@ -27,9 +27,9 @@ public class MatchController {
     private int remainingSeconds = 10;
     private int selectedZone = -1;
     
-    public MatchController(MatchView view, ClientNetwork network, String playerName) {
+    public MatchController(String matchId, String playerName) {
         this.matchView = view;
-        this.network = network;
+//        this.network = network;
         this.playerName = playerName;
         
         // Set controller reference in view

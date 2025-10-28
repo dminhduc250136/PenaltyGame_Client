@@ -23,7 +23,9 @@ public class LobbyView extends JFrame {
     private LobbyController lobbyController;
 
 
-    public LobbyView(String username) {
+    public LobbyView(String username, LobbyController lobbyController) {
+        this.lobbyController = lobbyController;
+        
         setTitle("Lobby");
         setSize(600, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

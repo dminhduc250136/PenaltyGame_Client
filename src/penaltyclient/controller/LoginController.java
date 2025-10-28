@@ -11,6 +11,8 @@ import penaltyclient.model.SocketService;
 import javax.swing.*;
 import java.io.*;
 import java.net.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 /**
  *
  * @author This PC
@@ -33,7 +35,7 @@ public class LoginController {
     public void login(String username, String password) {
 
         try {
-            SocketService.connect("localhost", 12346);
+            SocketService.connect("localhost", 12345);
             
             ObjectOutputStream out = SocketService.getOutputStream();
             ObjectInputStream in = SocketService.getInputStream();
@@ -57,4 +59,6 @@ public class LoginController {
             Logger.getLogger(LoginController.class.getName()).log(Level.SEVERE, null, ex);
         }   
     }
+    
+
 }

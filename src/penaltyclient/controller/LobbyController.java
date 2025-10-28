@@ -110,4 +110,8 @@ public class LobbyController {
     public void setUsername(String username) {
         this.username = username;
     }
+    
+    public static void main(String[] args) {
+        
+    }
 }
