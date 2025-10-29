@@ -38,15 +38,6 @@ public class LoginController {
         
         // Tạo một Scene (cảnh) mới chứa giao diện của LoginView
         Scene scene = new Scene(loginView.getView(), 350, 220);
-        
-        // Load CSS (Tùy chọn, nhưng nên có để đẹp hơn)
-        try {
-            String css = getClass().getResource("/penaltyclient/view/login.css").toExternalForm();
-            scene.getStylesheets().add(css);
-        } catch (Exception e) {
-            System.err.println("Không thể load login.css: " + e.getMessage());
-        }
-        
         // 4. Set Scene này cho Stage
         stage.setTitle("Login");
         stage.setScene(scene);
@@ -105,6 +96,12 @@ public class LoginController {
         alert.setTitle("Login Status");
         alert.setHeaderText(null);
         alert.setContentText(message);
+        
+        // === SỬA LỖI: THÊM DÒNG NÀY ===
+        // Đặt cửa sổ chính (stage) làm chủ của Alert
+        alert.initOwner(stage);
+        // ============================
+        
         alert.showAndWait();
     }
 }

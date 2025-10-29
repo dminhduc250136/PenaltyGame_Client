@@ -2,29 +2,30 @@ package penaltyclient.controller;
 
 import javafx.application.Platform;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert; // Import Alert
-import javafx.scene.control.ButtonType; // Import ButtonType
-import javafx.stage.Stage;
+import javafx.scene.control.Alert; 
+import javafx.scene.control.ButtonType; 
+import javafx.stage.Stage; // Import
 import penaltyclient.view.LobbyView;
 import java.io.*;
 import java.util.List;
-import java.util.Optional; // Import Optional
+import java.util.Optional; 
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import penaltyclient.model.ClientListener;
 import penaltyclient.model.SocketService;
-// Import MatchController của bạn ở đây (phiên bản JavaFX)
-// import penaltyclient.controller.MatchController; 
+import penaltyclient.model.MatchRecord;
+import penaltyclient.model.RankingEntry;
+import java.util.ArrayList; 
 
 /**
  * Controller cho Lobby, quản lý Stage và Scene.
- * Đã cập nhật để xử lý các sự kiện từ ClientListener.
+ * Đã cập nhật vị trí hiển thị Alert.
  */
 public class LobbyController {
 
     private LobbyView lobbyView;
     private LoginController loginController; 
-    private Stage stage; 
+    private Stage stage; // Biến này lưu cửa sổ chính
     private ObjectOutputStream out;
     private ObjectInputStream in;
     private String username;
@@ -45,8 +46,7 @@ public class LobbyController {
     }
 
     public void showLobbyView() {
-        Scene scene = new Scene(lobbyView.getView(), 600, 400);
-
+        Scene scene = new Scene(lobbyView.getView(), 600, 450); 
         stage.setTitle("Lobby - " + username);
         stage.setScene(scene);
         stage.setResizable(true); 
@@ -54,55 +54,78 @@ public class LobbyController {
 
         this.loadPlayers();
         
-        // Khởi tạo và chạy ClientListener
         new Thread(new ClientListener(this)).start();
     }
 
     public void loadPlayers() {
         try {   
-            sendMessage("GET_ONLINE_USERS"); // Dùng hàm sendMessage mới
-
-            List<String> users = (List<String>)in.readObject();
-            
-            Platform.runLater(new Runnable() { // Sửa cho Java 8
-                @Override
-                public void run() {
-                    for(String user : users) {
-                        if(user.equals(username))
+            sendMessage("GET_ONLINE_USERS"); 
+        } catch (Exception ex) {
+            Logger.getLogger(LobbyController.class.getName()).log(Level.SEVERE, "Lỗi khi gửi yêu cầu loadPlayers", ex);
+        }
+    }
+    
+    public void updateOnlinePlayers(List<String> users) {
+        Platform.runLater(new Runnable() { 
+            @Override
+            public void run() {
+                lobbyView.clearOnlinePlayers(); 
+                if (users != null) {
+                    for (String user : users) {
+                        if (user.equals(username))
                             continue;
                         lobbyView.addPlayer(user, "online", 0);
                     }
                 }
-            });
-
-        } catch (IOException | ClassNotFoundException ex) {
-            Logger.getLogger(LobbyController.class.getName()).log(Level.SEVERE, null, ex);
-        }
+            }
+        });
     }
 
+    public void handleReloadPlayers() {
+        System.out.println("Reloading players (gửi yêu cầu)...");
+        loadPlayers();
+    }
+    
+    public void loadMatchHistory() {
+        System.out.println("Loading match history...");
+        // TODO: sendMessage("GET_MATCH_HISTORY");
+        
+        List<MatchRecord> records = new ArrayList<>();
+        records.add(new MatchRecord("PlayerB", "Win (5-3)", "2025-10-28 10:30"));
+        records.add(new MatchRecord("PlayerC", "Loss (1-4)", "2025-10-27 09:15"));
+        lobbyView.updateMatchHistory(records);
+    }
+
+    public void loadRanking() {
+        System.out.println("Loading ranking...");
+        // TODO: sendMessage("GET_RANKING");
+        
+        List<RankingEntry> entries = new ArrayList<>();
+        entries.add(new RankingEntry(1, "BestPlayer", 1500, 50));
+        entries.add(new RankingEntry(2, username, 1450, 48)); 
+        entries.add(new RankingEntry(3, "PlayerC", 1400, 45));
+        lobbyView.updateRanking(entries);
+    }
+    
     public LobbyView getLobbyView() {
         return lobbyView;
     }
     
     public void handleLogout() {
         try {
-            sendMessage("LOGOUT"); // Dùng hàm sendMessage mới
-            SocketService.close(); // Đóng socket khi logout
+            sendMessage("LOGOUT"); 
+            SocketService.close(); 
         }
         catch(Exception e) {
             e.printStackTrace();
         }
-        
         loginController.showLoginView();
     }
 
     public void handleInvite(String playerName) {
-        sendMessage("INVITE:" + playerName); // Dùng hàm sendMessage mới
+        sendMessage("INVITE:" + playerName); 
     }
 
-    /**
-     * HÀM MỚI: Gửi tin nhắn đến server (thay thế cho hàm trong ClientListener).
-     */
     public void sendMessage(String msg) {
         try {
             if (out != null) {
@@ -116,18 +139,23 @@ public class LobbyController {
     }
 
     /**
-     * HÀM MỚI: Hiển thị Alert thông báo (thay thế JOptionPane.showMessageDialog).
+     * Sửa hàm này: Thêm alert.initOwner(stage)
      */
     public void showAlert(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle(title);
         alert.setHeaderText(null);
         alert.setContentText(message);
+        
+        // === SỬA LỖI: THÊM DÒNG NÀY ===
+        alert.initOwner(stage);
+        // ============================
+        
         alert.showAndWait();
     }
 
     /**
-     * HÀM MỚI: Hiển thị Alert mời chơi (thay thế JOptionPane.showOptionDialog).
+     * Sửa hàm này: Thêm alert.initOwner(stage)
      */
     public void showInvitationAlert(String inviter) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
@@ -139,6 +167,10 @@ public class LobbyController {
         ButtonType btnNo = new ButtonType("Refuse");
         alert.getButtonTypes().setAll(btnYes, btnNo);
 
+        // === SỬA LỖI: THÊM DÒNG NÀY ===
+        alert.initOwner(stage);
+        // ============================
+
         Optional<ButtonType> result = alert.showAndWait();
 
         if (result.isPresent() && result.get() == btnYes) {
@@ -148,26 +180,12 @@ public class LobbyController {
         }
     }
 
-    /**
-     * HÀM MỚI: Xử lý khi nhận được lệnh START_MATCH.
-     */
     public void startMatch(int matchId) {
-        // Ẩn Lobby (thực ra là chuyển Scene)
-        // Cần tạo MatchController (phiên bản JavaFX) và gọi hàm showMatchView()
-        
         showAlert("Match Starting", "Trận đấu " + matchId + " đang bắt đầu!");
-        // --- BẠN CẦN CHUYỂN MATCHCONTROLLER SANG JAVAFX ---
-        
-        // Ví dụ (sau khi bạn đã sửa MatchController):
-        // MatchController matchController = new MatchController(stage, matchId, username);
-        // matchController.showMatchView();
+        // TODO: Chuyển sang MatchController (JavaFX)
     }
 
     public String getUsername() {
         return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
     }
 }
