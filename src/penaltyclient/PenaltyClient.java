@@ -18,9 +18,8 @@ public class PenaltyClient extends Application {
     public void start(Stage primaryStage) throws IOException {
         // Khởi tạo LoginController và truyền vào primaryStage
         LoginController loginController = new LoginController(primaryStage);
-        loginController.showLoginView();
     }
-
+    
     public static void main(String[] args) {
         System.out.println("--- CHUONG TRINH BAT DAU (HAM MAIN) ---");
         // Phương thức launch() sẽ gọi start()

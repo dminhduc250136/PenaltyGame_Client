@@ -15,20 +15,28 @@ import penaltyclient.model.ClientListener;
 import penaltyclient.model.SocketService;
 import penaltyclient.controller.MatchController;
 import javafx.application.Platform;
+
 import penaltyclient.model.MatchRecord;
 import penaltyclient.model.RankingEntry;
 import java.util.ArrayList;
 
+/**
+ *
+ * @author This PC
+ */
 public class LobbyController {
 
     private LobbyView lobbyView;
     private LoginController loginController;
+    
 //    private ObjectOutputStream out = SocketService.getOutputStream();
 //    private ObjectInputStream in = SocketService.getInputStream();
 //    private ClientListener clientListener;
     private Stage stage; // Biến này lưu cửa sổ chính
     private ObjectOutputStream out;
     private ObjectInputStream in;
+    private ClientListener clientListener;
+
     private String username;
 
     public LobbyController(String username, Stage stage, LoginController loginController) {
@@ -58,6 +66,9 @@ public class LobbyController {
         this.loadPlayers();
         
         new Thread(new ClientListener((this))).start();
+        this.clientListener = new ClientListener(this); // Tạo listener cho lobby
+        new Thread(this.clientListener).start();
+        this.loadPlayers();
     }
 
     public void loadPlayers() {

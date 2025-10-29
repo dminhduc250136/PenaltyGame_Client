@@ -14,6 +14,7 @@ public class MatchController {
     private ClientListener clientListener;
     private LobbyController lobbyController;
     private Stage matchStage;
+
     private String playerName;
     private String opponentName;
     

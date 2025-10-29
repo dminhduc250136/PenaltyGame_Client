@@ -11,9 +11,6 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import penaltyclient.controller.LoginController;
 
-/**
- * Giao diện Login được xây dựng bằng JavaFX (đã thêm màu sắc trực tiếp).
- */
 public class LoginView { 
 
     private LoginController loginController;
@@ -29,9 +26,6 @@ public class LoginView {
         addEventHandlers();
     }
 
-    /**
-     * Hàm này xây dựng giao diện JavaFX với màu sắc "sân cỏ".
-     */
     private void createLoginPane() {
         grid = new GridPane();
         grid.setAlignment(Pos.CENTER);
@@ -64,12 +58,13 @@ public class LoginView {
         // Đặt màu chữ là màu trắng
         lbPassword.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");
         grid.add(lbPassword, 0, 2);
-
+        
         txtPassword = new PasswordField();
         txtPassword.setPromptText("Enter your password");
         // Đặt kiểu cho ô nhập liệu
         txtPassword.setStyle("-fx-background-radius: 5;");
         grid.add(txtPassword, 1, 2);
+
 
         // Nút Login: Nền trắng, chữ xanh
         btnLogin = new Button("Login");
@@ -95,9 +90,6 @@ public class LoginView {
         grid.add(hbBtn, 1, 4);
     }
 
-    /**
-     * Gán sự kiện cho các nút
-     */
     private void addEventHandlers() {
         btnLogin.setOnAction(e -> {
             String user = txtUsername.getText();
@@ -111,9 +103,6 @@ public class LoginView {
         txtPassword.setOnAction(e -> btnLogin.fire());
     }
 
-    /**
-     * Trả về node root của view này để set vào Scene.
-     */
     public Parent getView() {
         return grid;
     }

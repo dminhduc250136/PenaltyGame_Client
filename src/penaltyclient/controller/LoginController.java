@@ -12,26 +12,22 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import penaltyclient.controller.LobbyController;
 
-/**
- * Controller cho Login, quản lý Stage và Scene của JavaFX.
- */
+import javax.swing.*;
+import java.io.*;
+import java.net.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class LoginController {
 
     private LoginView loginView;
     private Stage stage; // 1. Thêm biến để lưu Stage (cửa sổ)
 
-    /**
-     * 2. Sửa constructor (hàm khởi tạo)
-     * Constructor bây giờ nhận một tham số là Stage.
-     */
     public LoginController(Stage stage) {
         this.stage = stage;
         // Việc khởi tạo LoginView được chuyển vào hàm showLoginView()
     }
 
-    /**
-     * Hiển thị giao diện Login trên Stage.
-     */
     public void showLoginView() {
         // 3. Khởi tạo LoginView ở đây
         this.loginView = new LoginView(this);
@@ -45,9 +41,6 @@ public class LoginController {
         stage.show();
     }
 
-    /**
-     * Ẩn (đóng) view Login.
-     */
     public void hideLoginView() {
         stage.hide(); // Dùng stage để ẩn cửa sổ
     }
@@ -87,10 +80,7 @@ public class LoginController {
             showAlert(Alert.AlertType.ERROR, "Could not connect to server: " + ex.getMessage());
         }   
     }
-    
-    /**
-     * Hàm tiện ích để hiển thị Alert (thay thế cho JOptionPane).
-     */
+
     private void showAlert(Alert.AlertType alertType, String message) {
         Alert alert = new Alert(alertType);
         alert.setTitle("Login Status");
