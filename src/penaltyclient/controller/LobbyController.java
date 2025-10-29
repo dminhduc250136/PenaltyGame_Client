@@ -28,10 +28,7 @@ public class LobbyController {
 
     private LobbyView lobbyView;
     private LoginController loginController;
-    
-//    private ObjectOutputStream out = SocketService.getOutputStream();
-//    private ObjectInputStream in = SocketService.getInputStream();
-//    private ClientListener clientListener;
+
     private Stage stage; // Biến này lưu cửa sổ chính
     private ObjectOutputStream out;
     private ObjectInputStream in;
@@ -41,8 +38,6 @@ public class LobbyController {
 
     public LobbyController(String username, Stage stage, LoginController loginController) {
         this.username = username;
-//        this.clientListener = new ClientListener(this); // Tạo listener cho lobby
-//        new Thread(this.clientListener).start();
         this.stage = stage;
         this.loginController = loginController;
         this.lobbyView = new LobbyView(username, this);
@@ -50,6 +45,11 @@ public class LobbyController {
         try {
             this.out = SocketService.getOutputStream();
             this.in = SocketService.getInputStream();
+            if (this.clientListener == null) { // Chỉ tạo nếu chưa có (an toàn hơn)
+                this.clientListener = new ClientListener(this, this.stage);
+                new Thread(this.clientListener).start(); // Chạy listener trên luồng riêng
+                System.out.println("ClientListener started for Lobby.");
+            }
         } catch (IOException e) {
             Logger.getLogger(LobbyController.class.getName()).log(Level.SEVERE, null, e);
             handleLogout();
@@ -63,15 +63,24 @@ public class LobbyController {
         stage.setResizable(true); 
         stage.show();
 
-        this.loadPlayers();
+        if (this.clientListener == null) {
+            this.clientListener = new ClientListener(this, stage);
+            new Thread(this.clientListener).start();
+            System.out.println("clientlistener ready");
+        } else {
+            clientListener.setLobbyController(this);
+            System.out.println("client listener reset to lobby");
+        }
         
-        new Thread(new ClientListener((this))).start();
-        this.clientListener = new ClientListener(this); // Tạo listener cho lobby
-        new Thread(this.clientListener).start();
+        if(!stage.isShowing()) {
+            stage.show();
+        }
+        
         this.loadPlayers();
     }
 
     public void loadPlayers() {
+        System.out.println("loadPlayer running");
         try {   
             sendMessage("GET_ONLINE_USERS"); 
         } catch (Exception ex) {
@@ -141,6 +150,7 @@ public class LobbyController {
     }
 
     public void sendMessage(String msg) {
+        System.out.println("Sending msg: " + msg);
         try {
             if (out != null) {
                 out.writeObject(msg);

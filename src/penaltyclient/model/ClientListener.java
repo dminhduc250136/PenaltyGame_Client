@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.util.List; // Cần import List
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.stage.Stage;
 
 /**
  *
@@ -26,8 +27,10 @@ public class ClientListener implements Runnable {
     private LobbyController lobbyController;
     private MatchController matchController;
     private LobbyView lobbyView;
+    private Stage stage;
     
-    public ClientListener(LobbyController lobbyController) {
+    public ClientListener(LobbyController lobbyController, Stage stage) {
+        this.stage = stage;
         this.lobbyController = lobbyController;
         try {
             out = SocketService.getOutputStream();
@@ -35,6 +38,17 @@ public class ClientListener implements Runnable {
         } catch (IOException e) {
             Logger.getLogger(ClientListener.class.getName()).log(Level.SEVERE, null, e);
         }
+    }
+    
+    public void setLobbyController(LobbyController lobbyController) {
+        this.lobbyController = lobbyController;
+        this.matchController = null; // Không còn ở trong trận đấu
+        System.out.println("ClientListener context switched back to Lobby.");
+    }
+
+    // Hàm để xóa tham chiếu MatchController (khi quay về lobby)
+    public void clearMatchController() {
+        this.matchController = null;
     }
     
     public void setMatchController(MatchController matchController) {
@@ -49,164 +63,120 @@ public class ClientListener implements Runnable {
             while(true) {
                 Object obj = in.readObject(); 
                 
+                if (obj != null) {
+                    System.out.println("Listener RECEIVED object of type: " + obj.getClass().getName());
+                } else {
+                    System.out.println("Listener RECEIVED null object!"); // Should not happen often
+                    continue;
+                }
                 if (obj instanceof String) {
                     // Xử lý các command dạng String
                     String message = (String) obj;
+                    System.out.println("REceived from server: " + message);
                     String[] parts = message.split(":");
                     String command = parts[0];
 
-                    switch(command) {
-                        case "INVITE_FROM": {
-                            String invitePlayer = parts[1];
-                            Platform.runLater(new Runnable() {
-                                @Override
-                                public void run() {
-                                    lobbyController.showInvitationAlert(invitePlayer);
-                                }
-                            });
-                            break;
-                        }
-                        case "INVITE_SUCCESS": {
-                            Platform.runLater(new Runnable() {
-                                @Override
-                                public void run() {
-                                    lobbyController.showAlert("Invitation Sent", "Invited successfully!");
-                                }
-                            });
-                            break;
-                        }
-                        // ... (các case khác của bạn) ...
-                        
-                        case "INVITE_FAIL":
-                        case "INVITE_RESPONSE_ACCEPT":
-                        case "INVITE_RESPONSE_DECLINE":
-                            // Bạn có thể gộp các case xử lý Alert đơn giản
-                            final String alertTitle = command;
-                            final String alertMessage = parts[1]; // Hoặc xử lý parts[1]
-                            Platform.runLater(new Runnable() {
-                                @Override
-                                public void run() {
-                                    lobbyController.showAlert(alertTitle, alertMessage);
-                                }
-                            });
-                            break;
+                    if(matchController != null) {
+                        // Đang trong trận -> Gửi cho MatchController
+                        final String finalMsg = message; // Biến final để dùng trong lambda
+                        Platform.runLater(() -> {
+                            // Kiểm tra lại matchController trước khi gọi (phòng trường hợp vừa quay về lobby)
+                            if (matchController != null) {
+                                matchController.handleServerMessage(finalMsg);
+                            }
+                        });
+                    }else if (lobbyController != null) {
+                        switch(command) {
+                            case "INVITE_FROM": {
+                                String invitePlayer = parts[1];
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        lobbyController.showInvitationAlert(invitePlayer);
+                                    }
+                                });
+                                break;
+                            }
+                            case "INVITE_SUCCESS": {
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        lobbyController.showAlert("Invitation Sent", "Invited successfully!");
+                                    }
+                                });
+                                break;
+                            }
 
-                        case "START_MATCH": {
-                            int matchId = Integer.parseInt(parts[1]);
-//                             Platform.runLater(new Runnable() {
-//                                @Override
-//                                public void run() {
-//                                    lobbyController.startMatch(matchId);
-//                                }
-//                            });
-                            System.out.println("Ban da tham ga match:" + matchId);
-                            break;
+                            case "INVITE_FAIL":
+                            case "INVITE_RESPONSE_ACCEPT":
+                            case "INVITE_RESPONSE_DECLINE":
+                                // Bạn có thể gộp các case xử lý Alert đơn giản
+                                final String alertTitle = command;
+                                final String alertMessage = parts[1]; // Hoặc xử lý parts[1]
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        lobbyController.showAlert(alertTitle, alertMessage);
+                                    }
+                                });
+                                break;
+
+                            case "MATCH_START": {
+                                if (parts.length >= 3) {
+                                    String opponentUsername = parts[1];
+                                    String firstShooter = parts[2]; // Ai sút trước
+
+                                    // **QUAN TRỌNG: Chuyển đổi View trên JavaFX Thread**
+                                    Platform.runLater(() -> {
+                                        System.out.println("Client: Received START_MATCH, attempting to switch view...");
+                                        // 1. Tạo MatchController MỚI
+                                        // Cần truyền Stage hiện tại (mainStage) vào MatchController
+                                        // Hoặc để MatchController tạo Stage mới và ẩn Stage cũ
+                                        matchController = new MatchController(
+                                                lobbyController.getUsername(),
+                                                opponentUsername,
+                                                this, // Truyền chính ClientListener này
+                                                lobbyController
+                                        );
+
+                                        this.matchController = matchController;
+                                        this.lobbyController = null;
+                                        // 2. Chuyển quyền quản lý sang MatchController
+                                        setMatchController(matchController);
+
+                                        // 3. Yêu cầu MatchController hiển thị MatchView
+                                        // (Hàm này nên xử lý việc thay Scene trên mainStage)
+                                        matchController.showMatchView();// Đổi tên hàm thành showMatchScene
+
+                                        // 4. Gửi thông tin bắt đầu cho MatchController (sau khi view sẵn sàng)
+                                        // Chuyển việc gọi handleMatchStart vào trong showMatchScene hoặc sau đó một chút
+                                        // matchController.handleMatchStart(firstShooter); // Gọi sau khi Scene đã hiển thị
+                                    });
+                                } else {
+                                    System.err.println("Client: Invalid START_MATCH message format: " + message);
+                                }
+                                break;
+                            }
                         }
-//=======
-//                Object obj = in.readObject();
-//                if(obj instanceof String) {
-//                    String msg = (String) obj;
-//                    String[] parts = msg.split(":");
-//                    String command = parts[0];
-//
-//                    if (matchController != null) {
-//                        Platform.runLater(() -> matchController.handleServerMessage(msg));
-//                    } else if (lobbyController != null) {
-//                        switch(command) {
-//                            case "INVITE_FROM": {
-//                                String invitePlayer = parts[1];
-//                                String[] options = {"Accept", "Refuse"};
-//
-//                                int choice = JOptionPane.showOptionDialog(
-//                                        lobbyView, // giao dien hien thi
-//                                        "You have been invited by " + invitePlayer, //message
-//                                        "Lời mời",                     // tiêu đề dialog
-//                                        JOptionPane.DEFAULT_OPTION,    // kiểu option
-//                                        JOptionPane.INFORMATION_MESSAGE, // icon
-//                                        null,                          // icon custom
-//                                        options,                       // text của các nút
-//                                        options[0]   
-//                                        );
-//
-//                                // xử lý theo lựa chọn
-//                                if (choice == 0) {
-//                                    // người chơi bấm Đồng ý
-//                                    sendMessage("INVITE_ACCEPT:" + invitePlayer);
-//                                } else if (choice == 1) {
-//                                    // người chơi bấm Từ chối
-//                                    sendMessage("INVITE_DECLINE:" + invitePlayer);
-//                                }
-//                                break;
-//                            }
-//                            case "INVITE_SUCCESS": {
-//                                JOptionPane.showMessageDialog(lobbyView, "Invited");
-//                                break;
-//                            }
-//                            case "INVITE_FAIL": {
-//                                JOptionPane.showMessageDialog(lobbyView, "Invite failed");
-//                                break;
-//                            }
-//
-//                            case "INVITE_RESPONSE_ACCEPT": {
-//                                String responder = parts[1];
-//                                JOptionPane.showMessageDialog(lobbyView, "accepted by "  + responder);
-//                                break;
-//                            }
-//
-//                            case "INVITE_RESPONSE_DECLINE": {
-//                                String responder2 = parts[1];
-//                                JOptionPane.showMessageDialog(lobbyView, "declined by "  + responder2);
-//                                break;
-//                            }
-//                            
-//                            case "START_MATCH": {
-//                                int matchId = Integer.parseInt(parts[1]);
-//                                String opponentUsername = parts[1];
-//                                // String firstShooter = parts[2]; // Và người sút trước
-//
-//                                final String finalOpponent = opponentUsername;
-//                                // final String finalFirstShooter = firstShooter; // Nếu có
-//
-//                                Platform.runLater(() -> {
-//                                    lobbyController.hideLobbyView(); // Ẩn lobby
-//                                    // Tạo MatchController, nó sẽ tự tạo MatchView
-//                                    matchController = new MatchController(lobbyController.getUsername(), finalOpponent, this);
-//                                    setMatchController(matchController); // Cập nhật listener để biết đang ở trong match
-//                                    matchController.showMatchView();
-//                                    // Thông báo cho MatchController biết trận đấu bắt đầu (có thể gộp vào constructor)
-//                                     matchController.handleMatchStart(new String[]{"MATCH_START", finalOpponent, finalFirstShooter});
-//                                    // Server cần gửi thêm message MATCH_START sau khi client sẵn sàng
-//                                });
-//                                break;
-//                            }
-//                            default:
-//                                System.out.println("unknown msg:" + msg);
-//                        }
-//                    }else {
-//                         System.out.println("Listener received message but no active controller: " + msg);
-//>>>>>>> Trung
                     }
-                } 
-                // === SỬA LỖI ĐA LUỒNG ===
-                // Nếu đối tượng nhận được là một List (phản hồi từ GET_ONLINE_USERS)
-                else if (obj instanceof List) { 
-                    try {
-                        // Giả định đây là List<String>
-                        @SuppressWarnings("unchecked") // Bỏ qua cảnh báo cast
-                        List<String> userList = (List<String>) obj;
-                        
-                        // Gọi hàm cập nhật giao diện trong LobbyController
-                        lobbyController.updateOnlinePlayers(userList);
-                        
-                    } catch (ClassCastException e) {
-                        System.err.println("ClientListener: Đã nhận 1 List nhưng không phải List<String>!");
+                } else if (obj instanceof List) { 
+                        try {
+                            // Giả định đây là List<String>
+                            @SuppressWarnings("unchecked") // Bỏ qua cảnh báo cast
+                            List<String> userList = (List<String>) obj;
+
+                            // Gọi hàm cập nhật giao diện trong LobbyController
+                            lobbyController.updateOnlinePlayers(userList);
+
+                        } catch (ClassCastException e) {
+                            System.err.println("ClientListener: Đã nhận 1 List nhưng không phải List<String>!");
+                        }
+                        // TODO: Bạn cũng nên làm điều tương tự cho
+                        // List<MatchRecord> (cho lịch sử) và List<RankingEntry> (cho xếp hạng)
+                        // Bằng cách kiểm tra `obj instanceof List` và kiểm tra phần tử đầu tiên
                     }
-                    // TODO: Bạn cũng nên làm điều tương tự cho
-                    // List<MatchRecord> (cho lịch sử) và List<RankingEntry> (cho xếp hạng)
-                    // Bằng cách kiểm tra `obj instanceof List` và kiểm tra phần tử đầu tiên
                 }
-            }
-        } catch (EOFException | SocketException e) {
+            } catch (EOFException | SocketException e) {
              System.out.println("Connection closed by server or client.");
              // Có thể thêm logic để hiển thị thông báo lỗi và quay về màn hình Login
              Platform.runLater(() -> {
@@ -225,6 +195,21 @@ public class ClientListener implements Runnable {
         }
     }
 
+    private void handleConnectionLoss() {
+        Platform.runLater(() -> {
+            if (matchController != null) {
+                matchController.showErrorAndClose("Connection lost.");
+                matchController = null; // Reset controller
+            } else if (lobbyController != null) {
+                lobbyController.showAlert("Error", "Connection lost. Returning to login screen.");
+                // Logic quay về màn hình Login
+                lobbyController.handleLogout(); // Thêm hàm này để quay về Login
+                lobbyController = null; // Reset controller
+            }
+            // Có thể đóng SocketService ở đây nếu chắc chắn không kết nối lại
+            // try { SocketService.close(); } catch (IOException ioEx) {}
+        });
+    }
 
     public void sendMessage(String msg) {
         try {
