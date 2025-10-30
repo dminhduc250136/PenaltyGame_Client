@@ -85,7 +85,7 @@ public class MatchView extends Application {
         VBox root = new VBox();
         root.setStyle("-fx-background-color: linear-gradient(to bottom, #87CEEB, #90EE90);");
         createGameView();
-        HBox scoreboard = createScoreBoard();
+        VBox scoreboard = createScoreBoard();
         scoreboard.setLayoutX(80);
         scoreboard.setLayoutY(30);
         HBox bottomUI = createBottomUI();
@@ -389,23 +389,43 @@ public class MatchView extends Application {
         gamePane.getChildren().add(ball);
     }
     
-    private HBox createScoreBoard() {
-        timerLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;");       
-        playerNameLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;");
-        opponentNameLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;");
-        myScore.setStyle("-fx-text-fill: white; -fx-font-size: 18px; -fx-font-weight: bold;");
-        opponentScore.setStyle("-fx-text-fill: white; -fx-font-size: 18px; -fx-font-weight: bold;");
+    private VBox createScoreBoard() {
+        String nameStyle = "-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;";
+        String scoreStyle = "-fx-text-fill: #35024F; -fx-font-size: 20px; -fx-font-weight: bold;";
 
+        // Gán style
+        timerLabel.setStyle("-fx-text-fill: black; -fx-font-size: 16px; -fx-font-weight: bold;");
+        playerNameLabel.setStyle(nameStyle);
+        opponentNameLabel.setStyle(nameStyle);
+        myScore.setStyle(scoreStyle);
+        opponentScore.setStyle(scoreStyle);
+
+        // Tạo label dấu gạch giữa tỉ số
         Label dash = new Label("-");
-        dash.setStyle("-fx-text-fill: white; -fx-font-size: 18px; -fx-font-weight: bold;");
+        dash.setStyle(scoreStyle);
 
+        // Box tỉ số xanh
         HBox scoreBox = new HBox(5, myScore, dash, opponentScore);
         scoreBox.setAlignment(Pos.CENTER);
+        scoreBox.setPadding(new Insets(4, 12, 4, 12));
+        scoreBox.setStyle("-fx-background-color: #0CFE76; -fx-background-radius: 4;"); // xanh lá
 
-        HBox scoreboard = new HBox(15, timerLabel, playerNameLabel, scoreBox, opponentNameLabel);
-        scoreboard.setAlignment(Pos.CENTER_LEFT);
-        scoreboard.setPadding(new Insets(8, 12, 8, 12));
-        scoreboard.setStyle("-fx-background-color: rgba(0,0,50,0.7); -fx-background-radius: 10;");
+        // HBox chứa tên 2 đội và tỉ số
+        HBox teamsBox = new HBox(10, playerNameLabel, scoreBox, opponentNameLabel);
+        teamsBox.setAlignment(Pos.CENTER);
+        teamsBox.setStyle("-fx-background-color: #35024F; -fx-background-radius: 6; -fx-padding: 6 10 6 10;");
+
+        // Đặt timer bên dưới
+        HBox timerBox = new HBox(timerLabel);
+        timerBox.setAlignment(Pos.CENTER);
+        timerBox.setPadding(new Insets(4, 0, 0, 0));
+        timerBox.setStyle("-fx-background-color: white; -fx-background-radius: 4;");
+
+        // Gộp tất cả lại thành VBox
+        VBox scoreboard = new VBox(3, teamsBox, timerBox);
+        scoreboard.setAlignment(Pos.CENTER);
+        scoreboard.setPadding(new Insets(6));
+        scoreboard.setStyle("-fx-background-color: null;");
 
         return scoreboard;
     }

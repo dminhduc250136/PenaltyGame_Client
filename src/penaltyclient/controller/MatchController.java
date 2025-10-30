@@ -392,7 +392,7 @@ public class MatchController {
     
     public void onWindowClose() {
         stopTurnTimer();
-         clientListener.sendMessage("LEAVE_MATCH");
+        clientListener.sendMessage("LEAVE_MATCH");
 //        try {
 //            SocketService.close(); // Đóng socket khi thoát cửa sổ game
 //        } catch (IOException e) { e.printStackTrace(); }
