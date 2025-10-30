@@ -19,9 +19,10 @@ import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Scale;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-import javafx.scene.*;
 import java.util.*;
 import javafx.scene.control.ButtonType;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.KeyCode;
 
 import penaltyclient.controller.MatchController;
 
@@ -40,18 +41,23 @@ public class MatchView extends Application {
     
     private Ellipse goalkeeper;
     
+    private MatchController controller;
+    private String playerName;
+    private String opponentName;
+    
     private Label scoreLabel;
+    private Label myScore = new Label("0");
+    private Label opponentScore = new Label("0");
     private Label messageLabel;
+    private Label playerNameLabel = new Label("BAR");
+    private Label opponentNameLabel = new Label("RMA");
     private Button confirmButton;
-    private Label timerLabel;
-    private Label opponentNameLabel;
+    private Label timerLabel = new Label("00:00");
     
     private boolean inputEnabled = false;
     private int selectedZone = -1;
     
-    private MatchController controller;
-    private String playerName;
-    private String opponentName;
+    
     
     public void setController (MatchController controller) {
         this.controller = controller;
@@ -79,41 +85,48 @@ public class MatchView extends Application {
         VBox root = new VBox();
         root.setStyle("-fx-background-color: linear-gradient(to bottom, #87CEEB, #90EE90);");
         createGameView();
+        HBox scoreboard = createScoreBoard();
+        scoreboard.setLayoutX(80);
+        scoreboard.setLayoutY(30);
         HBox bottomUI = createBottomUI();
         root.getChildren().addAll(gamePane, bottomUI);
+        
+        Pane overlay = new Pane(scoreboard);
+        StackPane pane = new StackPane(root, overlay);
+        StackPane.setAlignment(overlay, Pos.TOP_LEFT);
+//        overlay.setPickOnBounds(false); 
+//        overlay.setFocusTraversable(false);
+        
         VBox.setVgrow(gamePane, Priority.ALWAYS);
 
         // 4. Tạo Scene và thiết lập Stage
-        Scene scene = new Scene(root, SCENE_WIDTH, SCENE_HEIGHT);
+        Scene scene = new Scene(pane, SCENE_WIDTH, SCENE_HEIGHT);
         setupControls(scene); // Thiết lập sự kiện phím
 
         primaryStage.setScene(scene);
-        primaryStage.setTitle("Penalty Shootout"); // Có thể lấy tên từ controller sau
+        primaryStage.setTitle("Penalty Shootout");
         primaryStage.setResizable(false);
 
-        // 5. Xử lý đóng cửa sổ (yêu cầu controller xử lý)
         primaryStage.setOnCloseRequest(e -> {
             e.consume(); // Ngăn đóng ngay
             if (controller != null) {
                 // Tạo dialog xác nhận thoát
-                Alert confirmExit = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to exit the match?");
+                Alert confirmExit = new Alert(Alert.AlertType.CONFIRMATION, "Surrender?");
                 confirmExit.initOwner(primaryStage);
                 confirmExit.showAndWait().ifPresent(response -> {
                     if (response == ButtonType.OK) {
-                        controller.onWindowClose(); // Gọi controller để xử lý logic thoát
+                        controller.onWindowClose();
+                        primaryStage.close();
                     }
                 });
             } else {
-                primaryStage.close(); // Đóng nếu không có controller
+                primaryStage.close();
             }
         });
 
-        // 6. Hiển thị Stage
         primaryStage.show();
 
         System.out.println("MatchView started and UI initialized.");
-        // Controller sẽ cập nhật message sau
-        // updateMessage("Waiting for match start signal...");
     }
     
     private void createGameView() {
@@ -331,16 +344,18 @@ public class MatchView extends Application {
         goalkeeperBody.setStroke(Color.DARKORANGE);
         goalkeeperBody.setStrokeWidth(2);
         
-        // Arms
-        Line leftArm = new Line(435, 200, 420, 190);
+        leftArm = new Line(435, 200, 420, 190);
         leftArm.setStroke(Color.ORANGE);
         leftArm.setStrokeWidth(3);
         
-        Line rightArm = new Line(465, 200, 480, 190);
+        rightArm = new Line(465, 200, 480, 190);
         rightArm.setStroke(Color.ORANGE);
         rightArm.setStrokeWidth(3);
         
-        gamePane.getChildren().addAll(goalkeeperBody, leftArm, rightArm);
+        goalkeeperGroup = new Group(goalkeeperBody, leftArm, rightArm);
+        goalkeeperGroup.setTranslateX(0);
+        goalkeeperGroup.setTranslateY(0);
+        gamePane.getChildren().add(goalkeeperGroup);
     }
     
     private void updateGoalkeeperArms() {
@@ -374,20 +389,35 @@ public class MatchView extends Application {
         gamePane.getChildren().add(ball);
     }
     
+    private HBox createScoreBoard() {
+        timerLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;");       
+        playerNameLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;");
+        opponentNameLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;");
+        myScore.setStyle("-fx-text-fill: white; -fx-font-size: 18px; -fx-font-weight: bold;");
+        opponentScore.setStyle("-fx-text-fill: white; -fx-font-size: 18px; -fx-font-weight: bold;");
+
+        Label dash = new Label("-");
+        dash.setStyle("-fx-text-fill: white; -fx-font-size: 18px; -fx-font-weight: bold;");
+
+        HBox scoreBox = new HBox(5, myScore, dash, opponentScore);
+        scoreBox.setAlignment(Pos.CENTER);
+
+        HBox scoreboard = new HBox(15, timerLabel, playerNameLabel, scoreBox, opponentNameLabel);
+        scoreboard.setAlignment(Pos.CENTER_LEFT);
+        scoreboard.setPadding(new Insets(8, 12, 8, 12));
+        scoreboard.setStyle("-fx-background-color: rgba(0,0,50,0.7); -fx-background-radius: 10;");
+
+        return scoreboard;
+    }
+    
     private HBox createBottomUI() {
         HBox bottomPanel = new HBox(30);
         bottomPanel.setAlignment(Pos.CENTER);
         bottomPanel.setPadding(new Insets(20));
         bottomPanel.setStyle("-fx-background-color: rgba(0, 0, 0, 0.7);");
         bottomPanel.setPrefHeight(100);
-        
-        // Score display
-        scoreLabel = new Label("Score: 0 - 0");
-        scoreLabel.setFont(Font.font("Arial", FontWeight.BOLD, 18));
-        scoreLabel.setTextFill(Color.WHITE);
-        
-        // Shoot button
-        confirmButton = new Button("SHOOT!");
+
+        confirmButton = new Button("SUBMIT!");
         confirmButton.setPrefSize(120, 40);
         confirmButton.setFont(Font.font("Arial", FontWeight.BOLD, 16));
         confirmButton.setStyle(
@@ -396,7 +426,7 @@ public class MatchView extends Application {
             "-fx-background-radius: 5; " +
             "-fx-cursor: hand;"
         );
-//        shootButton.setOnAction(e -> showErrorMessage("clicked"));
+        
         confirmButton.setOnAction(e -> {
             if (inputEnabled && controller != null) {
                 controller.onConfirmChoice();
@@ -404,13 +434,12 @@ public class MatchView extends Application {
         });
         confirmButton.setDisable(true);
         
-        // Message label
         messageLabel = new Label("Click on a goal zone to shoot!");
         messageLabel.setFont(Font.font("Arial", 14));
         messageLabel.setTextFill(Color.YELLOW);
         messageLabel.setMinWidth(250);
                
-        bottomPanel.getChildren().addAll(scoreLabel, confirmButton, messageLabel);
+        bottomPanel.getChildren().addAll(confirmButton, messageLabel);
         
         return bottomPanel;
     }
@@ -453,89 +482,6 @@ public class MatchView extends Application {
         confirmButton.setDisable(false); // Cho phép nhấn Confirm
     }
     
-//    
-//    private void performShoot() {
-//        if (selectedZone == -1) {
-//            messageLabel.setText("Please select a target zone first!");
-//            messageLabel.setTextFill(Color.RED);
-//            return;
-//        }
-//        
-//        attempts++;
-//        
-//        // Calculate target position
-//        double goalX = 300;
-//        double goalY = 150;
-//        double zoneWidth = 300.0 / 3;
-//        double zoneHeight = 100.0 / 2;
-//        
-//        int row = selectedZone / 3;
-//        int col = selectedZone % 3;
-//        
-//        double targetX = goalX + col * zoneWidth + zoneWidth / 2;
-//        double targetY = goalY + row * zoneHeight + zoneHeight / 2;
-//        
-//        // Add some randomness
-//        targetX += (Math.random() - 0.5) * 20;
-//        targetY += (Math.random() - 0.5) * 10;
-//        
-//        // Ball shooting animation
-//        Timeline shootAnimation = new Timeline();
-//        
-//        KeyFrame start = new KeyFrame(Duration.ZERO,
-//            new KeyValue(ball.centerXProperty(), 450),
-//            new KeyValue(ball.centerYProperty(), 350),
-//            new KeyValue(ball.radiusProperty(), 12)
-//        );
-//        
-//        KeyFrame mid = new KeyFrame(Duration.millis(300),
-//            new KeyValue(ball.centerXProperty(), targetX),
-//            new KeyValue(ball.centerYProperty(), targetY - 30),
-//            new KeyValue(ball.radiusProperty(), 8)
-//        );
-//        
-//        KeyFrame end = new KeyFrame(Duration.millis(600),
-//            new KeyValue(ball.centerXProperty(), targetX),
-//            new KeyValue(ball.centerYProperty(), targetY),
-//            new KeyValue(ball.radiusProperty(), 6)
-//        );
-//        
-//        shootAnimation.getKeyFrames().addAll(start, mid, end);
-//        
-//        // Goalkeeper animation
-//        boolean saved = Math.random() < 0.3; // 30% save chance
-//        
-//        if (saved) {
-//            double keeperX = targetX;
-//            Timeline keeperAnimation = new Timeline(
-//                new KeyFrame(Duration.millis(400),
-//                    new KeyValue(goalkeeper.centerXProperty(), keeperX)
-//                )
-//            );
-//            keeperAnimation.play();
-//        }
-//        
-//        shootAnimation.setOnFinished(e -> {
-//            if (!saved) {
-//                goals++;
-//                messageLabel.setText("GOAL! Great shot!");
-//                messageLabel.setTextFill(Color.LIME);
-//            } else {
-//                messageLabel.setText("SAVED! The goalkeeper stopped it!");
-//                messageLabel.setTextFill(Color.RED);
-//            }
-//            
-//            scoreLabel.setText("Score: " + goals + "/" + attempts);
-//            
-//            // Reset after delay
-//            PauseTransition pause = new PauseTransition(Duration.seconds(2));
-//            pause.setOnFinished(ev -> resetField());
-//            pause.play();
-//        });
-//        
-//        shootAnimation.play();
-//    }
-    
     private void resetZoneStyle(int index) {
         if (index < 0 || index >= 6) {
             return;
@@ -549,15 +495,20 @@ public class MatchView extends Application {
     public void updateTimer(int seconds) {
         Platform.runLater(() -> {
             if (seconds >= 0) {
-                timerLabel.setText("Time: " + String.format("%02d", seconds));
+                timerLabel.setText("00:" + String.format("%02d", seconds));
             } else {
-                timerLabel.setText("Time: --"); // Hết giờ hoặc không đếm
+                timerLabel.setText("Time out"); // Hết giờ hoặc không đếm
             }
         });
     }
 
+    public void updateName(String name) {
+        this.playerName = name;
+        Platform.runLater(() -> this.playerNameLabel.setText(name));
+    }
     public void updateOpponentName(String name) {
-        Platform.runLater(() -> opponentNameLabel.setText("Opponent: " + name));
+        this.opponentName = name;
+        Platform.runLater(() -> this.opponentNameLabel.setText(name));
     }
     
     public void playShootAnimation(int shooterZone, int keeperZone, boolean isGoal, Runnable onFinish) {
@@ -643,33 +594,33 @@ public class MatchView extends Application {
     }
     
     public void resetField() {
-        Platform.runLater(() -> {
-            // Reset bóng về chấm penalty
-            ball.setCenterX(450);
-            ball.setCenterY(350);
-            ball.setRadius(12);
+//        Platform.runLater(() -> {
+        ball.setCenterX(450);
+        ball.setCenterY(350);
+        ball.setRadius(12);
 
-            // Reset vị trí thủ môn (về giữa và xóa translate)
-            goalkeeperGroup.setTranslateX(0);
-            goalkeeperGroup.setTranslateY(0);
-            goalkeeperBody.setCenterX(450); // Đặt lại gốc nếu cần SCENE_WIDTH / 2
-            goalkeeperBody.setCenterY(200); //SCENE_HEIGHT * 0.1 + SCENE_HEIGHT * 0.2 * 0.7
-            updateGoalkeeperArms(); // Cập nhật lại tay về vị trí cũ
+        goalkeeperGroup.setTranslateX(0);
+        goalkeeperGroup.setTranslateY(0);
+        goalkeeperBody.setCenterX(450); // Đặt lại gốc nếu cần SCENE_WIDTH / 2
+        goalkeeperBody.setCenterY(200); //SCENE_HEIGHT * 0.1 + SCENE_HEIGHT * 0.2 * 0.7
+        updateGoalkeeperArms();
 
-            // Reset zone styles và input
-            selectedZone = -1;
-            confirmButton.setDisable(true);
-            inputEnabled = false; // Mặc định disable input sau mỗi lượt, chờ server cho phép
-            for (int i = 0; i < 6; i++) {
-                resetZoneStyle(i);
-                goalZones[i].setMouseTransparent(true); // Disable click ban đầu
-            }
-        });
+        selectedZone = -1;
+        confirmButton.setDisable(true);
+        inputEnabled = false;
+        for (int i = 0; i < 6; i++) {
+            resetZoneStyle(i);
+            goalZones[i].setMouseTransparent(true);
+        }
+//        });
     }
     
     public void setupControls(Scene scene) {
-        scene.setOnKeyPressed(e -> {
-            if (!inputEnabled) return;
+        scene.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
+            if (!inputEnabled) {
+                System.out.println("input locked!!!");
+                return;
+            }
             switch (e.getCode()) {
                 case SPACE:
                     if (controller != null) {
@@ -679,19 +630,26 @@ public class MatchView extends Application {
                 case ESCAPE:
                     Platform.exit();
                     break;
+                case DIGIT4: case NUMPAD4:
+                    controller.onZoneSelected(3);
+                    break;
+                case DIGIT5: case NUMPAD5:
+                    controller.onZoneSelected(4);
+                    break;
+                case DIGIT6: case NUMPAD6:
+                    controller.onZoneSelected(5);
+                    break;
+                case DIGIT1: case NUMPAD1:
+                    controller.onZoneSelected(0);
+                    break;
+                case DIGIT2: case NUMPAD2:
+                    controller.onZoneSelected(1);
+                    break;
+                case DIGIT3: case NUMPAD3:
+                    controller.onZoneSelected(2);
+                    break;
+
                 default:
-                    // Number keys 1-6 for quick zone selection
-                    if (e.getCode().isDigitKey()) {
-                        String text = e.getText();
-                        try {
-                            int zone = Integer.parseInt(text) - 1;
-                            if (zone >= 0 && zone < 6) {
-                                controller.onZoneSelected(zone);
-                            }
-                        } catch (NumberFormatException ex) {
-                            // Ignore
-                        }
-                    }
                     break;
             };
         });
@@ -702,11 +660,12 @@ public class MatchView extends Application {
         selectedZone = -1; // Reset lựa chọn
         confirmButton.setDisable(true); // Chưa chọn nên chưa confirm được
          // Reset style các zone (xóa highlight cũ nếu có)
-         for (int i = 0; i < 6; i++) {
-             resetZoneStyle(i);
-             goalZones[i].setMouseTransparent(false); // Cho phép click lại
-         }
-        // Có thể thêm hiệu ứng nhẹ nhàng cho các zone để báo hiệu có thể chọn
+        for (int i = 0; i < 6; i++) {
+            resetZoneStyle(i);
+            goalZones[i].setMouseTransparent(false);
+            System.out.println("enableChoosingZone: zone " + i + " mouseTransparent=" + goalZones[i].isMouseTransparent());
+        }
+        Platform.runLater(() -> gamePane.requestFocus());
     }
 
     public void disableInput() {
@@ -729,8 +688,10 @@ public class MatchView extends Application {
     }
     
     public void updateScore(int myScore, int opponentScore) {
+        String m = String.valueOf(myScore);
         Platform.runLater(() -> {
-            scoreLabel.setText("Score: " + myScore + " - " + opponentScore);
+            this.myScore.setText(String.valueOf(myScore));
+            this.opponentScore.setText(String.valueOf(opponentScore));
         });
     }
     

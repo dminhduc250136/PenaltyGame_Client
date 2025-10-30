@@ -66,6 +66,7 @@ public class MatchController {
 
                 // Cập nhật thông tin ban đầu (sau khi View đã hiển thị)
                 updateViewScores();
+                matchView.updateName(playerName);
                 matchView.updateOpponentName(opponentName);
                 matchView.updateMessage("Waiting for match start signal...");
 
@@ -176,6 +177,7 @@ public class MatchController {
         isMyTurn = firstShooter.equals(playerName);
         myRole = isMyTurn ? "SHOOTER" : "GOALKEEPER";
 
+        matchView.updateName(playerName);
         matchView.updateOpponentName(opponentName); // Cập nhật tên đối thủ trên UI
         matchView.updateMessage("Match starts! " + opponentName + " vs " + playerName +
                 ". " + firstShooter + " shoots first.");
@@ -259,21 +261,18 @@ public class MatchController {
     public void onConfirmChoice() {
         if (!isMyTurn || choiceConfirmed) return; // Chỉ xác nhận 1 lần mỗi lượt
 
-        stopTurnTimer(); // Dừng đếm ngược
-        choiceConfirmed = true; // Đánh dấu đã xác nhận
-        matchView.disableInput(); // Khóa input lại
-
-        // Nếu chưa chọn ô nào (ví dụ hết giờ), chọn random
+        stopTurnTimer();
+        choiceConfirmed = true;
+        matchView.disableInput();
+        
         if (selectedZone == -1) {
             selectedZone = (int) (Math.random() * 6);
             System.out.println("No zone selected, choosing random: " + selectedZone);
         }
-
-        // Gửi lựa chọn lên server
+        
         // Format: CHOICE:<match_id>:<zone_number> (Cần có match_id, tạm bỏ qua nếu server tự biết)
         clientListener.sendMessage("CHOICE:" + selectedZone);
 
-        // Chuyển sang trạng thái chờ đối thủ / chờ kết quả
          handleWaiting();
          matchView.updateMessage("Choice confirmed ("+selectedZone+"). Waiting for result...");
     }
