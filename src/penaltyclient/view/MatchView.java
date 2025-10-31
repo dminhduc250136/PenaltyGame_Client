@@ -23,6 +23,9 @@ import java.util.*;
 import javafx.scene.control.ButtonType;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.KeyCode;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+
 
 import penaltyclient.controller.MatchController;
 
@@ -87,8 +90,8 @@ public class MatchView extends Application {
         root.setStyle("-fx-background-color: linear-gradient(to bottom, #87CEEB, #90EE90);");
         createGameView();
         VBox scoreboard = createScoreBoard();
-        scoreboard.setLayoutX(80);
-        scoreboard.setLayoutY(30);
+        scoreboard.setLayoutX(30);
+        scoreboard.setLayoutY(0);
         HBox bottomUI = createBottomUI();
         root.getChildren().addAll(gamePane, bottomUI);
         
@@ -407,19 +410,26 @@ public class MatchView extends Application {
         scoreBox.setPadding(new Insets(4, 12, 4, 12));
         scoreBox.setStyle("-fx-background-color: #0CFE76; -fx-background-radius: 4;"); // xanh lá
 
+        Image logo = new Image(getClass().getResourceAsStream("/penaltyclient/Assets/epl_logo.png"));
+        ImageView logoView = new ImageView(logo);
+        logoView.setFitWidth(40); // Kích thước vừa phải
+        logoView.setFitHeight(40);
+        logoView.setPreserveRatio(true);
+        
         // HBox chứa tên 2 đội và tỉ số
-        HBox teamsBox = new HBox(10, playerNameLabel, scoreBox, opponentNameLabel);
+        HBox teamsBox = new HBox(12, playerNameLabel, scoreBox, opponentNameLabel);
         teamsBox.setAlignment(Pos.CENTER);
+        teamsBox.setPadding(new Insets(8, 14, 8, 14));
         teamsBox.setStyle("-fx-background-color: #35024F; -fx-background-radius: 6; -fx-padding: 6 10 6 10;");
 
         // Đặt timer bên dưới
         HBox timerBox = new HBox(timerLabel);
         timerBox.setAlignment(Pos.CENTER);
-        timerBox.setPadding(new Insets(4, 0, 0, 0));
-        timerBox.setStyle("-fx-background-color: white; -fx-background-radius: 4;");
+        timerBox.setPadding(new Insets(6, 0, 0, 0));
+        timerBox.setStyle("-fx-background-color: white; -fx-background-radius: 6;");
 
         // Gộp tất cả lại thành VBox
-        VBox scoreboard = new VBox(3, teamsBox, timerBox);
+        VBox scoreboard = new VBox(3, logoView, teamsBox, timerBox);
         scoreboard.setAlignment(Pos.CENTER);
         scoreboard.setPadding(new Insets(6));
         scoreboard.setStyle("-fx-background-color: null;");

@@ -59,10 +59,18 @@ public class LobbyController {
     }
 
     public void showLobbyView() {
-//        Scene scene = new Scene(lobbyView.getView(), 600, 450); 
         stage.setTitle("Lobby - " + username);
         stage.setScene(lobbyScene);
-        stage.setResizable(true); 
+        stage.setResizable(true);
+        
+        stage.setOnCloseRequest(e -> {
+            // Ngăn sự kiện đóng cửa sổ ngay lập tức
+            e.consume();
+            handleLogout();
+            Platform.exit();
+            System.exit(0);
+        });
+        
         stage.show();
 
         if (this.clientListener == null) {
@@ -206,7 +214,7 @@ public class LobbyController {
         showAlert("Match Starting", "Trận đấu " + matchId + " đang bắt đầu!");
         // TODO: Chuyển sang MatchController (JavaFX)
     }
-
+    
     public String getUsername() {
         return username;
     }
