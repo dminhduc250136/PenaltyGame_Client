@@ -119,23 +119,35 @@ public class LobbyController {
     
     public void loadMatchHistory() {
         System.out.println("Loading match history...");
-        // TODO: sendMessage("GET_MATCH_HISTORY");
+        try {   
+            sendMessage("GET_MATCH_HISTORY:" + username);
+        } catch (Exception ex) {
+            Logger.getLogger(LobbyController.class.getName()).log(Level.SEVERE, "Lỗi khi gửi yêu cầu loadMatchHistory", ex);
+        }
         
-        List<MatchRecord> records = new ArrayList<>();
-        records.add(new MatchRecord("PlayerB", "Win (5-3)", "2025-10-28 10:30"));
-        records.add(new MatchRecord("PlayerC", "Loss (1-4)", "2025-10-27 09:15"));
-        lobbyView.updateMatchHistory(records);
+    }
+    
+    public void updateMatchHistory(List<MatchRecord> records) {
+        if (records != null) {
+            lobbyView.updateMatchHistory(records);
+        }
     }
 
     public void loadRanking() {
         System.out.println("Loading ranking...");
-        // TODO: sendMessage("GET_RANKING");
-        
-        List<RankingEntry> entries = new ArrayList<>();
-        entries.add(new RankingEntry(1, "BestPlayer", 1500, 50));
-        entries.add(new RankingEntry(2, username, 1450, 48)); 
-        entries.add(new RankingEntry(3, "PlayerC", 1400, 45));
-        lobbyView.updateRanking(entries);
+        try {   
+            sendMessage("GET_RANKING");
+        } catch (Exception ex) {
+            Logger.getLogger(LobbyController.class.getName()).log(Level.SEVERE, "Lỗi khi gửi yêu cầu loadRanking", ex);
+        }
+ 
+    }
+    
+    public void updateRanking(List<RankingEntry> entries) {
+        if(entries != null) {
+            lobbyView.updateRanking(entries);
+
+        }
     }
     
     public LobbyView getLobbyView() {

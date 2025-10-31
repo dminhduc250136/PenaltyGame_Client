@@ -1,5 +1,6 @@
 package penaltyclient.model;
 
+import share.ServerListResponse;
 import javax.swing.JOptionPane;
 import java.io.*;
 import java.net.SocketException;
@@ -15,7 +16,7 @@ import java.util.List; // Cần import List
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.stage.Stage;
-
+import share.ServerListResponse;
 /**
  *
  * @author This PC
@@ -165,23 +166,37 @@ public class ClientListener implements Runnable {
                             }
                         }
                     }
-                } else if (obj instanceof List) { 
-                        try {
-                            // Giả định đây là List<String>
-                            @SuppressWarnings("unchecked") // Bỏ qua cảnh báo cast
-                            List<String> userList = (List<String>) obj;
-
-                            // Gọi hàm cập nhật giao diện trong LobbyController
-                            lobbyController.updateOnlinePlayers(userList);
-
-                        } catch (ClassCastException e) {
-                            System.err.println("ClientListener: Đã nhận 1 List nhưng không phải List<String>!");
+                } else if (obj instanceof ServerListResponse) {
+                    ServerListResponse response = (ServerListResponse) obj;
+                    if (lobbyController != null) {
+                        switch(response.getCommand()) {
+                            case ServerListResponse.UPDATE_ONLINE_USERS:
+                                try {
+                                    @SuppressWarnings("unchecked")
+                                    List<String> userList = (List<String>) response.getData();
+                                    lobbyController.updateOnlinePlayers(userList);
+                                } catch (ClassCastException e) {
+                                    System.err.println("ClientListener: Lỗi cast UPDATE_ONLINE_USERS!");
+                                }
+                                break;
+                            
+                            // Bạn có thể dễ dàng thêm case cho Xếp hạng và Lịch sử
+                            
+                            case ServerListResponse.UPDATE_RANKING:
+                                // List<RankingEntry> rankingList = (List<RankingEntry>) response.getData();
+                                // lobbyController.updateRanking(rankingList);
+                                break;
+                                
+                            case ServerListResponse.UPDATE_HISTORY:
+                                // List<MatchRecord> historyList = (List<MatchRecord>) response.getData();
+                                // lobbyController.updateMatchHistory(historyList);
+                                break;
                         }
-                        // TODO: Bạn cũng nên làm điều tương tự cho
-                        // List<MatchRecord> (cho lịch sử) và List<RankingEntry> (cho xếp hạng)
-                        // Bằng cách kiểm tra `obj instanceof List` và kiểm tra phần tử đầu tiên
                     }
-                }
+                } 
+                
+            }
+              
             } catch (EOFException | SocketException e) {
              System.out.println("Connection closed by server or client.");
              // Có thể thêm logic để hiển thị thông báo lỗi và quay về màn hình Login
