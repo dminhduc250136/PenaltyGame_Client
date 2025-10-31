@@ -529,7 +529,7 @@ public class MatchView extends Application {
             if (seconds >= 0) {
                 timerLabel.setText("00:" + String.format("%02d", seconds));
             } else {
-                timerLabel.setText("Time out"); // Hết giờ hoặc không đếm
+                timerLabel.setText("Waiting..."); // Hết giờ hoặc không đếm
             }
         });
     }

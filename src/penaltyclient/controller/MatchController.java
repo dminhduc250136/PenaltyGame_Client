@@ -366,7 +366,7 @@ public class MatchController {
                 resultMessage = "DRAW!\n" +
                               "Final Score: " + myScore + " - " + opponentScore;
             } else { // Đối thủ thắng
-                 resultMessage = "You Lost!\n" +
+                 resultMessage = "You Lose!\n" +
                                "Winner: " + opponentName + "\n" +
                                "Final Score: " + myScore + " - " + opponentScore;
             }
@@ -380,7 +380,7 @@ public class MatchController {
     }
     
     public void requestRematch() {
-        clientListener.sendMessage("REMATCH_REQUEST");
+        clientListener.sendMessage("REMATCH_REQUEST:" + opponentName);
     }
     
     private void handleOpponentDisconnected() {

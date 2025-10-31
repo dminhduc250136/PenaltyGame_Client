@@ -116,7 +116,7 @@ public class ClientListener implements Runnable {
                                     @Override
                                     public void run() {
                                         if (alertTitle == "INVITE_RESPONSE_ACCEPT") {
-                                            lobbyController.showAlert(alertTitle, alertMessage + " accepted!");
+                                            lobbyController.showAlert("Accepted", alertMessage + " accepted!");
                                         } else if (alertTitle == "INVITE_RESPONSE_DECLINE") {
                                             lobbyController.showAlert("Declined", alertMessage + " declined!");
                                         } else {
@@ -137,6 +137,7 @@ public class ClientListener implements Runnable {
                                         // 1. Tạo MatchController MỚI
                                         // Cần truyền Stage hiện tại (mainStage) vào MatchController
                                         // Hoặc để MatchController tạo Stage mới và ẩn Stage cũ
+                                        lobbyController.hideLobbyView();
                                         matchController = new MatchController(
                                                 lobbyController.getUsername(),
                                                 opponentUsername,
