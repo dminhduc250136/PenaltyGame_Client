@@ -51,6 +51,7 @@ public class MatchView extends Application {
     private Label messageLabel;
     private Label playerNameLabel = new Label("BAR");
     private Label opponentNameLabel = new Label("RMA");
+    private Button exitButton;
     private Button confirmButton;
     private Label timerLabel = new Label("00:00");
     
@@ -94,8 +95,8 @@ public class MatchView extends Application {
         Pane overlay = new Pane(scoreboard);
         StackPane pane = new StackPane(root, overlay);
         StackPane.setAlignment(overlay, Pos.TOP_LEFT);
-//        overlay.setPickOnBounds(false); 
-//        overlay.setFocusTraversable(false);
+        overlay.setPickOnBounds(false); 
+        overlay.setFocusTraversable(false);
         
         VBox.setVgrow(gamePane, Priority.ALWAYS);
 
@@ -276,6 +277,8 @@ public class MatchView extends Application {
             gamePane.getChildren().add(line);
         }
         
+        gamePane.getChildren().addAll(netBg, leftPost, rightPost, crossbar);
+
         // Create 6 shooting zones (3 columns x 2 rows)
         double zoneWidth = goalWidth / 3;
         double zoneHeight = goalHeight / 2;
@@ -306,7 +309,7 @@ public class MatchView extends Application {
                     if (selectedZone == -1) {
                         goalZones[zoneIndex].setOpacity(0.3);
                         goalZones[zoneIndex].setFill(Color.rgb(255, 255, 0, 0.2));
-                        messageLabel.setText("Aim: " + zoneNames[zoneIndex]);
+                        messageLabel.setText("Aim: " + zoneNames[zoneIndex] + "\nClick SUBMIT or type SPACE to confirm.");
                     }
                 });
                 
@@ -322,24 +325,18 @@ public class MatchView extends Application {
                 
                 goalZones[index].setOnMouseClicked(e -> {
                     if (selectedZone == -1) {
-                        selectZone(zoneIndex);
+                        controller.onZoneSelected(zoneIndex);
                     }
                 });
                 
                 gamePane.getChildren().add(goalZones[index]);
             }
-        }
-        
-        gamePane.getChildren().addAll(netBg, leftPost, rightPost, crossbar);
+        }        
     }
     
     private void createGoalkeeper() {
         // Goalkeeper in center of goal
         goalkeeperBody = new Ellipse(450, 200, 15, 20);
-//        goalkeeperBody = new Ellipse(SCENE_WIDTH / 2, SCENE_HEIGHT * 0.1 + SCENE_HEIGHT * 0.2 * 0.7, 15, 25);
-//        goalkeeper.setFill(Color.ORANGE);
-//        goalkeeper.setStroke(Color.DARKORANGE);
-//        goalkeeper.setStrokeWidth(2);
         goalkeeperBody.setFill(Color.ORANGE);
         goalkeeperBody.setStroke(Color.DARKORANGE);
         goalkeeperBody.setStrokeWidth(2);
@@ -437,6 +434,20 @@ public class MatchView extends Application {
         bottomPanel.setStyle("-fx-background-color: rgba(0, 0, 0, 0.7);");
         bottomPanel.setPrefHeight(100);
 
+        exitButton = new Button("QUIT");
+        exitButton.setPrefSize(120, 40);
+        exitButton.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        exitButton.setStyle(
+            "-fx-background-color: #BF092F; " +
+            "-fx-text-fill: white; " +
+            "-fx-background-radius: 5; " +
+            "-fx-cursor: hand;"
+        );
+        
+        exitButton.setOnAction(e -> {
+            controller.onWindowClose();
+        });
+        
         confirmButton = new Button("SUBMIT!");
         confirmButton.setPrefSize(120, 40);
         confirmButton.setFont(Font.font("Arial", FontWeight.BOLD, 16));
@@ -455,11 +466,12 @@ public class MatchView extends Application {
         confirmButton.setDisable(true);
         
         messageLabel = new Label("Click on a goal zone to shoot!");
+        messageLabel.setWrapText(true);
         messageLabel.setFont(Font.font("Arial", 14));
         messageLabel.setTextFill(Color.YELLOW);
         messageLabel.setMinWidth(250);
                
-        bottomPanel.getChildren().addAll(confirmButton, messageLabel);
+        bottomPanel.getChildren().addAll(exitButton, confirmButton, messageLabel);
         
         return bottomPanel;
     }
@@ -550,11 +562,8 @@ public class MatchView extends Application {
                             new KeyValue(ball.radiusProperty(), 8)) // Bóng nhỏ lại khi vào gôn
             );
 
-            // Animation thủ môn (chỉ chạy nếu không phải là bàn thắng)
-            if (!isGoal) {
-                Point keeperTarget = getZoneCenter(keeperZone); // Thủ môn bay đến ô đã chọn
-                animateGoalkeeper(keeperTarget.x, keeperTarget.y);
-            }
+            Point keeperTarget = getZoneCenter(keeperZone); // Thủ môn bay đến ô đã chọn
+            animateGoalkeeper(keeperTarget.x, keeperTarget.y);
 
             ballAnimation.setOnFinished(e -> {
                 // Có thể thêm hiệu ứng (lưới rung, bóng bật ra...)
@@ -643,12 +652,9 @@ public class MatchView extends Application {
             }
             switch (e.getCode()) {
                 case SPACE:
-                    if (controller != null) {
+                    if (controller != null && selectedZone != -1) {
                         controller.onConfirmChoice();
                     }
-                    break;
-                case ESCAPE:
-                    Platform.exit();
                     break;
                 case DIGIT4: case NUMPAD4:
                     controller.onZoneSelected(3);
