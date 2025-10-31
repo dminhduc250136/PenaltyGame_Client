@@ -1,13 +1,9 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 
 package penaltyclient.view;
 
 import javafx.animation.*;
 import javafx.application.Application;
+import static javafx.application.Application.launch;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -32,6 +28,7 @@ public class MatchView extends Application {
 
     private static final double SCENE_WIDTH = 900;
     private static final double SCENE_HEIGHT = 700;
+    private BorderPane mainPane;
     
     private Pane gamePane;
     private Rectangle[] goalZones = new Rectangle[6];
@@ -535,38 +532,11 @@ public class MatchView extends Application {
             alert.showAndWait();
         });
     }
-    
+    public BorderPane getRoot() {
+        return mainPane;
+    }
     public static void main(String[] args) {
         launch(args);
     }
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
-    @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc=" Generated Code ">//GEN-BEGIN:initComponents
->>>>>>> origin/main
-    private void initComponents() {
-
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-
-        org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(0, 400, Short.MAX_VALUE)
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(0, 300, Short.MAX_VALUE)
-        );
-
-        pack();
-<<<<<<< HEAD
-    }// </editor-fold>                        
-
-=======
-    }
-    // </editor-fold>//GEN-END:initComponents
-
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    // End of variables declaration//GEN-END:variables
-
+    
 }

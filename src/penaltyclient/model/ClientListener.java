@@ -76,15 +76,20 @@ public class ClientListener implements Runnable {
                             });
                             break;
 
-                        case "START_MATCH": {
-                            int matchId = Integer.parseInt(parts[1]);
-//                             Platform.runLater(new Runnable() {
-//                                @Override
-//                                public void run() {
-//                                    lobbyController.startMatch(matchId);
-//                                }
-//                            });
-                            System.out.println("Ban da tham ga match:" + matchId);
+                        case "MATCH_START": {
+                            String opponentName = parts[1];
+                            String firstShooter = parts[2];
+                            
+                            System.out.println("Client nhận lệnh MATCH_START. Đối thủ: " + opponentName);
+                            
+                            // Phải chạy trên luồng UI (JavaFX)
+                            Platform.runLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    // Yêu cầu LobbyController chuyển cảnh
+                                    lobbyController.startMatchTransition(opponentName, firstShooter);
+                                }
+                            });
                             break;
                         }
                     }

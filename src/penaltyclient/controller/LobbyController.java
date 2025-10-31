@@ -180,12 +180,22 @@ public class LobbyController {
         }
     }
 
-    public void startMatch(int matchId) {
-        showAlert("Match Starting", "Trận đấu " + matchId + " đang bắt đầu!");
-        // TODO: Chuyển sang MatchController (JavaFX)
-    }
 
     public String getUsername() {
         return username;
+    }
+    
+    public void startMatchTransition(String opponentName, String firstShooter) {
+        System.out.println("LobbyController: Trao quyền cho MatchController...");
+
+        // 1. Xác định vai trò
+        String myRole = (username.equals(firstShooter)) ? "SHOOTER" : "GOALKEEPER";
+        System.out.println("Vai trò của tôi: " + myRole);
+
+        // 2. Tạo MatchController mới và truyền các thông tin cần thiết
+        MatchController matchController = new MatchController(stage, username, opponentName, myRole);
+        
+        // 3. Yêu cầu MatchController tự hiển thị
+        matchController.showMatchView();
     }
 }

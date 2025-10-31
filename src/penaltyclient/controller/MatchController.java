@@ -1,285 +1,64 @@
-<<<<<<< HEAD
 package penaltyclient.controller;
 
-import javafx.application.Platform;
-import javafx.animation.Timeline;
-import javafx.animation.KeyFrame;
-import javafx.util.Duration;
-import penaltyclient.view.MatchView;
-//import network.ClientNetwork;
+import javafx.scene.Scene; // Cần import Scene
+import javafx.stage.Stage;
+import penaltyclient.view.MatchView; // Import view
 
 public class MatchController {
-    private MatchView matchView;
-//    private ClientNetwork network;
-    private String playerName;
+    
+    private Stage primaryStage;
+    private MatchView matchView; // Giao diện trận đấu
+    private String myUsername;
     private String opponentName;
+    private String myRole; // "SHOOTER" hoặc "GOALKEEPER"
+    private boolean isMyTurn = false;
     
-    // Game state
-    private boolean isMyTurn;
-    private String myRole; // "SHOOTER" or "GOALKEEPER"
-    private int myScore = 0;
-    private int opponentScore = 0;
-    private int currentRound = 1;
-    private int maxRounds = 5;
-    
-    // Turn timing
-    private Timeline turnTimer;
-    private int remainingSeconds = 10;
-    private int selectedZone = -1;
-    
-    public MatchController(String matchId, String playerName) {
-        this.matchView = view;
-//        this.network = network;
-        this.playerName = playerName;
-        
-        // Set controller reference in view
-        matchView.setController(this);
-        
-        // Setup network message handlers
-        setupNetworkHandlers();
-    }
-    
-    private void setupNetworkHandlers() {
-        network.setMessageHandler(message -> {
-            Platform.runLater(() -> handleServerMessage(message));
-        });
-    }
-    
-    public void handleConnect(Stage primaryStage, String playerName) {
-        if (network.connect(playerName)) {
-            matchView.initializeGameUI(primaryStage);
-            network.joinQueue();
-            matchView.updateMessage("Waiting for opponent...");
-        } else {
-            matchView.showErrorMessage("Could not connect to server!");
-            Platform.exit();
-        }
-    }
+    // (private SocketService socketService;)
 
-    private void handleServerMessage(String message) {
-        String[] parts = message.split("\\|");
-        String command = parts[0];
-        
-        switch (command) {
-            case "MATCH_START":
-                handleMatchStart(parts);
-                break;
-            case "TURN_START":
-                handleTurnStart(parts);
-                break;
-            case "TURN_RESULT":
-                handleTurnResult(parts);
-                break;
-            case "MATCH_END":
-                handleMatchEnd(parts);
-                break;
-            case "OPPONENT_DISCONNECTED":
-                handleOpponentDisconnected();
-                break;
-        }
+
+    public MatchController(Stage stage, String myUsername, String opponentName, String myRole) {
+        this.primaryStage = stage;
+        this.myUsername = myUsername;
+        this.opponentName = opponentName;
+        this.myRole = myRole;
+        // (this.socketService = SocketService.getInstance();)
     }
     
-    private void handleMatchStart(String[] parts) {
-        // MATCH_START|opponentName|firstShooter
-        opponentName = parts[1];
-        String firstShooter = parts[2];
+
+    public void showMatchView() {
+        // 1. Tự tạo View của mình
+        this.matchView = new MatchView();
         
-        isMyTurn = firstShooter.equals(playerName);
-        myRole = isMyTurn ? "SHOOTER" : "GOALKEEPER";
+        // 2. (Gán các sự kiện cho các nút trong matchView)
+        // ví dụ:
+        // for(Button zoneButton : matchView.getZoneButtons()) {
+        //    zoneButton.setOnAction(e -> onZoneSelected(zoneButton.getUserData()));
+        // }
+        // matchView.getConfirmButton().setOnAction(e -> onConfirmChoice());
+
+        // 3. Tạo Scene từ View
+        Scene matchScene = new Scene(matchView.getRoot(), 1000, 700); // Kích thước ví dụ
         
-        matchView.updateMessage("Bắt đầu! " + (isMyTurn ? "Lượt bạn sút!" : "Lượt bạn bắt!"));
+        // 4. Thiết lập Scene cho Stage
+        primaryStage.setScene(matchScene);
+        primaryStage.setTitle("Đang thi đấu với " + opponentName);
         
-        // Wait 3 seconds then start first turn
-        Timeline delay = new Timeline(new KeyFrame(Duration.seconds(3), e -> {
-            if (isMyTurn) {
-                startMyTurn();
-            } else {
-                waitForOpponent();
-            }
-        }));
-        delay.play();
+        // 5. Gọi hàm nội bộ để thiết lập UI ban đầu
+        handleMatchStart();
     }
     
-    private void handleTurnStart(String[] parts) {
-        // TURN_START|round|role
-        currentRound = Integer.parseInt(parts[1]);
-        myRole = parts[2];
-        isMyTurn = true;
+    private void handleMatchStart() {
+        System.out.println("MatchController: Trận đấu bắt đầu. Vai trò: " + myRole);
         
-        startMyTurn();
+        // Cập nhật các nhãn tên trên giao diện MatchView
+        // (Giả sử MatchView có các phương thức này)
+        // matchView.setPlayerNames(myUsername, opponentName);
+        // matchView.setScore(0, 0);
+        // matchView.showStatus("Trận đấu bắt đầu! Chờ lượt đầu tiên...");
+        // matchView.disableChoosingZone(); // Khóa các nút chọn
     }
     
-    private void startMyTurn() {
-        selectedZone = -1;
-        remainingSeconds = 10;
-        
-        if (myRole.equals("SHOOTER")) {
-            matchView.enableChoosingZone();
-            matchView.updateMessage("Lượt bạn sút! (" + remainingSeconds + "s)");
-        } else {
-            matchView.enableChoosingZone();
-            matchView.updateMessage("Lượt bạn bắt! (" + remainingSeconds + "s)");
-        }
-        
-        startTurnTimer();
-    }
     
-    private void startTurnTimer() {
-        if (turnTimer != null) {
-            turnTimer.stop();
-        }
-        
-        turnTimer = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
-            remainingSeconds--;
-            
-            if (remainingSeconds > 0) {
-                String action = myRole.equals("SHOOTER") ? "SHOOT" : "SAVE";
-                matchView.updateMessage("Lượt bạn " + action + "! (" + remainingSeconds + "s)");
-            } else {
-                // Time's up - submit choice or random
-                submitChoice();
-            }
-        }));
-        turnTimer.setCycleCount(10);
-        turnTimer.play();
-    }
     
-    // Called by MatchView when player selects a zone
-    public void onZoneSelected(int zoneIndex) {
-        if (!isMyTurn) return;
-        
-        selectedZone = zoneIndex;
-        String[] zoneNames = {"Trái trên", "Giữa trên", "Phải trên", 
-                             "Trái dưới", "Giữa dưới", "Phải dưới"};
-        matchView.updateMessage("Selected: " + zoneNames[zoneIndex] + " - Nhấn SPACE để xác nhận!");
-    }
-    
-    // Called by MatchView when player confirms (SPACE key or SHOOT button)
-    public void onConfirmChoice() {
-        if (!isMyTurn) return;
-        
-        submitChoice();
-    }
-    
-    private void submitChoice() {
-//        if (turnTimer != null) {
-//            turnTimer.stop();
-//        }
-//        
-        // If no zone selected, choose random
-        if (matchView.getSelectedZone() == -1) {
-            selectedZone = (int)(Math.random() * 6);
-        }
-        
-        // Disable further input
-//        isMyTurn = false;
-//        matchView.disableInput();
-//        matchView.updateMessage("Waiting for result...");
-//        
-        // Send choice to server
-        network.sendMessage("CHOICE|" + selectedZone);
-        
-        // Wait for opponent and result
-//        waitForOpponent();
-    }
-    
-//    private void waitForOpponent() {
-//        matchView.disableInput();
-//        matchView.updateMessage("Waiting for opponent...");
-//    }
-    
-    private void handleTurnResult(String[] parts) {
-        // TURN_RESULT|shooterZone|keeperZone|isGoal|myNewScore|opponentNewScore|shooterName
-        int shooterZone = Integer.parseInt(parts[1]);
-        int keeperZone = Integer.parseInt(parts[2]);
-        boolean isGoal = Boolean.parseBoolean(parts[3]);
-        myScore = Integer.parseInt(parts[4]);
-        opponentScore = Integer.parseInt(parts[5]);
-        String shooterName = parts[6];
-        
-        // Update score display
-        matchView.updateScore(myScore, opponentScore);
-        
-        // Determine who was shooter in this turn
-        boolean iWasShooter = shooterName.equals(playerName);
-        
-        // Show animation
-        if (iWasShooter) {
-            matchView.playShootAnimation(shooterZone, keeperZone, isGoal, result -> {
-                showTurnResultMessage(isGoal, true);
-                prepareNextTurn();
-            });
-        } else {
-            matchView.playGoalkeeperAnimation(shooterZone, keeperZone, isGoal, result -> {
-                showTurnResultMessage(isGoal, false);
-                prepareNextTurn();
-            });
-        }
-    }
-    
-    private void showTurnResultMessage(boolean isGoal, boolean iWasShooter) {
-        if (iWasShooter) {
-            if (isGoal) {
-                matchView.updateMessage("GOAL! You scored!");
-            } else {
-                matchView.updateMessage("SAVED! Opponent blocked your shot!");
-            }
-        } else {
-            if (isGoal) {
-                matchView.updateMessage("GOAL! Opponent scored!");
-            } else {
-                matchView.updateMessage("SAVED! You blocked the shot!");
-            }
-        }
-    }
-    
-    private void prepareNextTurn() {
-        // Wait 2 seconds before next turn
-        Timeline delay = new Timeline(new KeyFrame(Duration.seconds(2), e -> {
-            matchView.resetField();
-            // Server will send TURN_START for next turn
-        }));
-        delay.play();
-    }
-    
-    private void handleMatchEnd(String[] parts) {
-        // MATCH_END|winner|finalMyScore|finalOpponentScore
-        String winner = parts[1];
-        int finalMyScore = Integer.parseInt(parts[2]);
-        int finalOpponentScore = Integer.parseInt(parts[3]);
-        
-        matchView.updateScore(finalMyScore, finalOpponentScore);
-        
-        String resultMessage;
-        if (winner.equals(playerName)) {
-            resultMessage = "🎉 YOU WIN! 🎉\n" +
-                          "Final Score: " + finalMyScore + " - " + finalOpponentScore;
-        } else if (winner.equals("DRAW")) {
-            resultMessage = "Match continues to sudden death!";
-            return; // Continue playing
-        } else {
-            resultMessage = "You Lost!\n" +
-                          "Final Score: " + finalMyScore + " - " + finalOpponentScore;
-        }
-        
-        matchView.updateMessage(resultMessage);
-    }
-    
-    private void handleOpponentDisconnected() {
-        if (turnTimer != null) {
-            turnTimer.stop();
-        }
-        matchView.showErrorMessage("Opponent disconnected! You win by default.");
-    }
-    
-    public void requestRematch() {
-        network.sendMessage("REMATCH_REQUEST");
-    }
-    
-    public void leaveMatch() {
-        if (turnTimer != null) {
-            turnTimer.stop();
-        }
-        network.sendMessage("LEAVE_MATCH");
-    }
+    // (Các hàm Giai đoạn 3: handleTurnStart, onConfirmChoice, handleTurnResult...)
 }
