@@ -25,7 +25,14 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.input.KeyCode;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-
+import javafx.scene.image.WritableImage;
+import javafx.scene.image.PixelReader;
+import javafx.scene.image.PixelWriter;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Text;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+import java.net.URL;
 
 import penaltyclient.controller.MatchController;
 
@@ -34,8 +41,16 @@ public class MatchView extends Application {
 
     private static final double SCENE_WIDTH = 900;
     private static final double SCENE_HEIGHT = 700;
-    
+    // Style cố định cho "Tôi" (màu tím)
+    private static final String MY_TEAM_STYLE = "-fx-background-color: #007bff; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16px; -fx-background-radius: 4; -fx-padding: 2 5 2 5;";
+    // Style cố định cho "Đối thủ" (màu cam)
+    private static final String OPPONENT_TEAM_STYLE = "-fx-background-color: #FF8C00; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16px; -fx-background-radius: 4; -fx-padding: 2 5 2 5;";
     private Pane gamePane;
+    
+    private Text resultTextOverlay;
+    private MediaPlayer backgroundMusicPlayer;
+    private Media goalSoundMedia;
+    private Media saveSoundMedia;
     private Rectangle[] goalZones = new Rectangle[6];
     private ImageView ballImageView;
     private Image ballImage;
@@ -43,6 +58,12 @@ public class MatchView extends Application {
     private ImageView goalkeeperImageView;
     private Image goalkeeperStandingImage; // Ảnh đứng yên (word-image-3.png)
     private Image[] goalkeeperImages = new Image[6]; // Mảng 6 ảnh động tác
+    
+    private Image goalkeeperStandingImageRecolored; // Ảnh đứng yên (đã đổi màu)
+    private Image[] goalkeeperImagesRecolored = new Image[6]; // Mảng 6 ảnh (đã đổi màu)
+
+    // Biến cờ để quyết định dùng bộ ảnh nào
+    private boolean useRecoloredGoalkeeper = false;
 
     // Hằng số kích thước thủ môn chi tiết hơn
     private static final double GOALKEEPER_STAND_HEIGHT = 80; // Chiều cao khi đứng
@@ -88,11 +109,14 @@ public class MatchView extends Application {
             });
             return;
         }
+        
+        // 2. Tải âm thanh
+        loadSounds(); // <-- GỌI HÀM TẢI ÂM THANH
 
-        // 2. Báo cho controller biết instance View này đã được tạo
+        // 3. Báo cho controller biết instance View này đã được tạo
         this.controller.registerViewInstance(this);
 
-        // 3. Xây dựng UI (code tạo VBox, Pane, HBox, etc. như cũ)
+        // 4. Xây dựng UI (code tạo VBox, Pane, HBox, etc. như cũ)
         VBox root = new VBox();
         root.setStyle("-fx-background-color: linear-gradient(to bottom, #87CEEB, #90EE90);");
         createGameView();
@@ -109,8 +133,16 @@ public class MatchView extends Application {
         overlay.setFocusTraversable(false);
         
         VBox.setVgrow(gamePane, Priority.ALWAYS);
+        
+        resultTextOverlay = new Text("");
+        resultTextOverlay.setFont(Font.font("Arial", FontWeight.BOLD, 80)); // Cỡ chữ siêu lớn
+        resultTextOverlay.setEffect(new javafx.scene.effect.DropShadow(10, Color.BLACK));
+        resultTextOverlay.setVisible(false); // Ẩn lúc đầu
+        
+        pane.getChildren().add(resultTextOverlay);
+        StackPane.setAlignment(resultTextOverlay, Pos.CENTER); // Đặt ở giữa
 
-        // 4. Tạo Scene và thiết lập Stage
+        // 5. Tạo Scene và thiết lập Stage
         Scene scene = new Scene(pane, SCENE_WIDTH, SCENE_HEIGHT);
         setupControls(scene); // Thiết lập sự kiện phím
 
@@ -126,18 +158,122 @@ public class MatchView extends Application {
                 confirmExit.initOwner(primaryStage);
                 confirmExit.showAndWait().ifPresent(response -> {
                     if (response == ButtonType.OK) {
+                        stopBackgroundMusic(); // <-- DỪNG NHẠC
                         controller.onWindowClose();
                         primaryStage.close();
                     }
                 });
             } else {
+                stopBackgroundMusic(); // <-- DỪNG NHẠC
                 primaryStage.close();
             }
         });
 
         primaryStage.show();
+        
+        if (backgroundMusicPlayer != null) {
+            backgroundMusicPlayer.play();
+        }
 
         System.out.println("MatchView started and UI initialized.");
+    }
+    
+    public void stopBackgroundMusic() {
+        if (backgroundMusicPlayer != null) {
+            Platform.runLater(() -> backgroundMusicPlayer.stop());
+        }
+    }
+
+
+    public void playGoalSound() {
+        if (goalSoundMedia != null) {
+            Platform.runLater(() -> {
+                MediaPlayer goalPlayer = new MediaPlayer(goalSoundMedia);
+                goalPlayer.setVolume(1);
+                goalPlayer.play();
+            });
+        }
+    }
+    public void playSaveSound() {
+        if (saveSoundMedia != null) {
+            Platform.runLater(() -> {
+               MediaPlayer savePlayer = new MediaPlayer(saveSoundMedia);
+               savePlayer.setVolume(1);
+               savePlayer.play();
+            });
+        }
+    }
+    
+    private void loadSounds() {
+    try {
+        // --- Nhạc nền (Loop) ---
+        URL bgmUrl = getClass().getResource("/penaltyclient/sound/mu.wav");
+        if (bgmUrl != null) {
+            Media bgmMedia = new Media(bgmUrl.toExternalForm());
+            backgroundMusicPlayer = new MediaPlayer(bgmMedia);
+            backgroundMusicPlayer.setCycleCount(MediaPlayer.INDEFINITE); // Lặp vô hạn
+            backgroundMusicPlayer.setVolume(0.3); // Nhạc nền nên để nhỏ
+        } else {
+            System.err.println("Không tìm thấy file: mu.wav");
+        }
+
+        // --- Tiếng Goal (Phát 1 lần) ---
+        URL goalUrl = getClass().getResource("/penaltyclient/sound/siuuu.wav");
+        if (goalUrl != null) {
+            goalSoundMedia = new Media(goalUrl.toExternalForm());
+        } else {
+            System.err.println("Không tìm thấy file: siuuu.wav");
+        }
+
+        URL saveUrl = getClass().getResource("/penaltyclient/sound/save.mp3");
+        if (saveUrl != null) {
+            saveSoundMedia = new Media(saveUrl.toExternalForm());
+        }
+        else {
+            System.err.println("Không tìm thấy file: save.mp3");
+        }
+
+    } catch (Exception e) {
+        System.err.println("Lỗi khi tải âm thanh: " + e.getMessage());
+        e.printStackTrace();
+    }
+}
+    
+    public void showTurnResultText(String message, boolean isGoal, String color) {
+        Platform.runLater(() -> {
+            resultTextOverlay.setText(message);
+            if (isGoal) {
+                if(color.equals("green")) {
+                    resultTextOverlay.setFill(Color.LIMEGREEN);
+                    resultTextOverlay.setStroke(Color.DARKGREEN);
+                }
+                else {
+                    resultTextOverlay.setFill(Color.RED);
+                    resultTextOverlay.setStroke(Color.DARKRED);
+                }
+            } else {
+                if(color.equals("green")) {
+                    resultTextOverlay.setFill(Color.LIMEGREEN);
+                    resultTextOverlay.setStroke(Color.DARKGREEN);
+                }
+                else {
+                    resultTextOverlay.setFill(Color.RED);
+                    resultTextOverlay.setStroke(Color.DARKRED);
+                }
+            }
+
+            resultTextOverlay.setVisible(true);
+            resultTextOverlay.setOpacity(1.0);
+
+            // Tạo hiệu ứng: Hiện 1s, rồi mờ dần trong 1s
+            PauseTransition pause = new PauseTransition(Duration.seconds(1));
+            FadeTransition fadeOut = new FadeTransition(Duration.seconds(1), resultTextOverlay);
+            fadeOut.setToValue(0);
+
+            SequentialTransition sequence = new SequentialTransition(pause, fadeOut);
+            sequence.setOnFinished(e -> resultTextOverlay.setVisible(false));
+            sequence.play();
+        });
     }
     
     private void createGameView() {
@@ -343,12 +479,60 @@ public class MatchView extends Application {
             }
         }        
     }
-    
- 
-    private void createGoalkeeper() {
-        // Tải ảnh thủ môn đứng yên (word-image-3.png)
-        goalkeeperStandingImage = new Image(getClass().getResourceAsStream("/penaltyclient/Assets/word-image-3.png"));
 
+    // hàm đổi màu áo cho ảnh gốc
+    private static Image recolorImage(Image sourceImage, double newHue) {
+        int width = (int) sourceImage.getWidth();
+        int height = (int) sourceImage.getHeight();
+        WritableImage destImage = new WritableImage(width, height);
+
+        PixelReader reader = sourceImage.getPixelReader();
+        PixelWriter writer = destImage.getPixelWriter();
+
+        // Dải màu của áo đấu gốc (Đỏ/Cam/Vàng)
+        // Hue của Đỏ là ~0 (hoặc 360), Vàng là ~60.
+        final double HUE_START_RED = 340.0; // Bắt đầu dải màu đỏ
+        final double HUE_END_RED = 25.0;     // Kết thúc dải màu đỏ/cam
+        final double HUE_START_YELLOW = 40.0; // Bắt đầu dải màu vàng
+        final double HUE_END_YELLOW = 70.0;   // Kết thúc dải màu vàng
+
+        // Ngưỡng để không thay đổi màu da, găng tay, tóc...
+        final double MIN_SATURATION = 0.3; // Phải đủ "đậm"
+        final double MIN_BRIGHTNESS = 0.2; // Phải đủ "sáng"
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                Color color = reader.getColor(x, y);
+
+                // Bỏ qua các pixel trong suốt
+                if (color.getOpacity() < 0.1) {
+                    writer.setColor(x, y, Color.TRANSPARENT);
+                    continue;
+                }
+
+                double hue = color.getHue();
+                double sat = color.getSaturation();
+                double bri = color.getBrightness();
+
+                // Kiểm tra xem pixel có thuộc áo đấu không
+                boolean isRedRange = (hue >= HUE_START_RED || hue <= HUE_END_RED);
+                boolean isYellowRange = (hue >= HUE_START_YELLOW && hue <= HUE_END_YELLOW);
+                boolean isSaturatedEnough = (sat > MIN_SATURATION && bri > MIN_BRIGHTNESS);
+
+                if ((isRedRange || isYellowRange) && isSaturatedEnough) {
+                    // Đây là pixel áo đấu!
+                    // Giữ nguyên Saturation và Brightness, chỉ thay Hue.
+                    Color newColor = Color.hsb(newHue, sat, bri, color.getOpacity());
+                    writer.setColor(x, y, newColor);
+                } else {
+                    // Không phải áo đấu, giữ nguyên màu gốc
+                    writer.setColor(x, y, color);
+                }
+            }
+        }
+        return destImage;
+    }
+    private void createGoalkeeper() {
         // Tải 6 ảnh động tác (ánh xạ tới 6 zone 0-5)
         // Dựa theo thứ tự bạn cung cấp:
         goalkeeperImages[0] = new Image(getClass().getResourceAsStream("/penaltyclient/Assets/word-image-6.png")); // Top Left
@@ -358,6 +542,14 @@ public class MatchView extends Application {
         goalkeeperImages[4] = new Image(getClass().getResourceAsStream("/penaltyclient/Assets/word-image-3.png")); // Bottom Center (dùng ảnh đứng)
         goalkeeperImages[5] = new Image(getClass().getResourceAsStream("/penaltyclient/Assets/word-image-4.png")); // Bottom Right
 
+        // Tải ảnh thủ môn đứng yên (word-image-3.png)
+        goalkeeperStandingImage = new Image(getClass().getResourceAsStream("/penaltyclient/Assets/word-image-3.png"));
+        double blueHue = 240.0; // Sắc độ của màu xanh dương
+        for (int i = 0; i < 6; i++) {
+            goalkeeperImagesRecolored[i] = recolorImage(goalkeeperImages[i], blueHue);
+        }
+        goalkeeperStandingImageRecolored = goalkeeperImagesRecolored[4];
+        
         // Khởi tạo ImageView với ảnh đứng
         goalkeeperImageView = new ImageView(goalkeeperStandingImage);
         goalkeeperImageView.setFitHeight(GOALKEEPER_STAND_HEIGHT); // Đặt chiều cao 80
@@ -368,7 +560,7 @@ public class MatchView extends Application {
         
         // Đặt vị trí top-left (X, Y) sao cho tâm của ảnh ở (450, 200)
         goalkeeperImageView.setX(450 - standingWidth / 2); // 450 là tâm gôn
-        goalkeeperImageView.setY(200 - GOALKEEPER_STAND_HEIGHT / 2); // 200 là tâm gôn theo chiều Y
+        goalkeeperImageView.setY(215 - GOALKEEPER_STAND_HEIGHT / 2); // 200 là tâm gôn theo chiều Y
         
         gamePane.getChildren().add(goalkeeperImageView);
     }
@@ -393,13 +585,12 @@ public class MatchView extends Application {
     }
     
     private VBox createScoreBoard() {
-        String nameStyle = "-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;";
+//        String nameStyle = "-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;";
         String scoreStyle = "-fx-text-fill: #35024F; -fx-font-size: 20px; -fx-font-weight: bold;";
-
+        playerNameLabel.setStyle(MY_TEAM_STYLE);      // Cố định màu của "Tôi"
+        opponentNameLabel.setStyle(OPPONENT_TEAM_STYLE); // Cố định màu của "Đối thủ"
         // Gán style
         timerLabel.setStyle("-fx-text-fill: black; -fx-font-size: 16px; -fx-font-weight: bold;");
-        playerNameLabel.setStyle(nameStyle);
-        opponentNameLabel.setStyle(nameStyle);
         myScore.setStyle(scoreStyle);
         opponentScore.setStyle(scoreStyle);
 
@@ -489,6 +680,16 @@ public class MatchView extends Application {
         return bottomPanel;
     }
     
+    // hàm chuyển đổi màu áo
+    public void setGoalkeeperMode(boolean isMyTeam) {
+        this.useRecoloredGoalkeeper = isMyTeam;
+        // Cập nhật ngay ảnh đứng yên
+        if (isMyTeam) {
+            goalkeeperImageView.setImage(goalkeeperStandingImageRecolored);
+        } else {
+            goalkeeperImageView.setImage(goalkeeperStandingImage);
+        }
+    }
     private void selectZone(int index) {
         selectedZone = index;
         
@@ -633,6 +834,13 @@ public class MatchView extends Application {
     private void animateGoalkeeper(double targetX, double targetY, int keeperZone) {
         // 1. Lấy ảnh bay lượn tương ứng
         Image diveImage = goalkeeperImages[keeperZone];
+        if (useRecoloredGoalkeeper) {
+            diveImage = goalkeeperImagesRecolored[keeperZone]; // <-- Lấy ảnh đổi màu
+        } else {
+            diveImage = goalkeeperImages[keeperZone]; // <-- Lấy ảnh gốc
+        }
+
+        
         goalkeeperImageView.setImage(diveImage);
         
         double newWidth, newHeight;
@@ -726,14 +934,18 @@ public class MatchView extends Application {
         ballImageView.setFitHeight(24);
 
         // Reset thủ môn về ảnh đứng, kích thước đứng
-        goalkeeperImageView.setImage(goalkeeperStandingImage);
+        if (useRecoloredGoalkeeper) {
+            goalkeeperImageView.setImage(goalkeeperStandingImageRecolored);
+        } else {
+            goalkeeperImageView.setImage(goalkeeperStandingImage);
+        }
         goalkeeperImageView.setFitHeight(GOALKEEPER_STAND_HEIGHT);
         goalkeeperImageView.setPreserveRatio(true);
         
         // Đặt lại vị trí đứng ban đầu
         double standingWidth = (goalkeeperStandingImage.getWidth() / goalkeeperStandingImage.getHeight()) * GOALKEEPER_STAND_HEIGHT;
         goalkeeperImageView.setX(450 - standingWidth / 2);
-        goalkeeperImageView.setY(200 - GOALKEEPER_STAND_HEIGHT / 2);
+        goalkeeperImageView.setY(215 - GOALKEEPER_STAND_HEIGHT / 2);
 
         // **QUAN TRỌNG:** Reset mọi phép dịch chuyển (Translate) về 0
         goalkeeperImageView.setTranslateX(0);

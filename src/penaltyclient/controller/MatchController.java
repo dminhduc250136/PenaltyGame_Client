@@ -94,6 +94,7 @@ public class MatchController {
     public void closeMatchViewAndReturnToLobby() {
         Platform.runLater(() -> {
             if (matchStage != null && matchStage.isShowing()) {
+                matchView.stopBackgroundMusic();
                 matchStage.close();
             }
             // Yêu cầu LobbyController hiển thị lại LobbyView
@@ -144,7 +145,7 @@ public class MatchController {
                         myScore = Integer.parseInt(parts[4]);
                         opponentScore = Integer.parseInt(parts[5]);
                         String shooterName = parts[6];
-                        handleTurnResult(shooterZone, keeperZone, result.equals("GOAL"), shooterName);
+                        handleTurnResult(shooterZone, keeperZone, result.equals("goal"), shooterName);
                     }
                     break;
                 case "MATCH_END": // Server gửi: MATCH_END:<winner_or_DRAW>:<yourFinalScore>:<opponentFinalScore>
@@ -176,7 +177,7 @@ public class MatchController {
     private void handleMatchStart(String firstShooter) {
         isMyTurn = firstShooter.equals(playerName);
         myRole = isMyTurn ? "SHOOTER" : "GOALKEEPER";
-
+        matchView.setGoalkeeperMode(myRole.equals("GOALKEEPER"));
         matchView.updateName(playerName);
         matchView.updateOpponentName(opponentName); // Cập nhật tên đối thủ trên UI
         matchView.updateMessage("Match starts! " + opponentName + " vs " + playerName +
@@ -192,21 +193,22 @@ public class MatchController {
     }
     
     private void handleTurnStart() {
-         isMyTurn = true; // Đến lượt mình
-         choiceConfirmed = false; // Reset trạng thái xác nhận
-         selectedZone = -1; // Reset lựa chọn ô
-         remainingSeconds = 15; // Reset thời gian đếm ngược
+        isMyTurn = true; // Đến lượt mình
+        choiceConfirmed = false; // Reset trạng thái xác nhận
+        selectedZone = -1; // Reset lựa chọn ô
+        remainingSeconds = 15; // Reset thời gian đếm ngược
+        
+        matchView.setGoalkeeperMode(myRole.equals("GOALKEEPER"));
+        matchView.resetField(); // Reset hiển thị sân
+        matchView.enableChoosingZone(); // Cho phép chọn ô
 
-         matchView.resetField(); // Reset hiển thị sân
-         matchView.enableChoosingZone(); // Cho phép chọn ô
+        if (myRole.equals("SHOOTER")) {
+            matchView.updateMessage("Your turn to SHOOT! Round: " + currentRound + "\nPress 1 - 6 on your keyboard and SUBMIT to SHOOT!");
+        } else { // GOALKEEPER
+            matchView.updateMessage("Your turn to SAVE! Round: " + currentRound + "\nPress 1 - 6 on your keyboard and SUBMIT to SAVE!");
+        }
 
-         if (myRole.equals("SHOOTER")) {
-             matchView.updateMessage("Your turn to SHOOT! Round: " + currentRound + "\nPress 1 - 6 on your keyboard and SUBMIT to SHOOT!");
-         } else { // GOALKEEPER
-             matchView.updateMessage("Your turn to SAVE! Round: " + currentRound + "\nPress 1 - 6 on your keyboard and SUBMIT to SAVE!");
-         }
-
-         startTurnTimer(); // Bắt đầu đếm ngược
+        startTurnTimer(); // Bắt đầu đếm ngược
      }
     
     private void handleWaiting() {
@@ -278,36 +280,44 @@ public class MatchController {
     }
     
     private void handleTurnResult(int shooterZone, int keeperZone, boolean isGoal, String shooterName) {
-         updateViewScores(); // Cập nhật điểm trên UI trước
+        updateViewScores(); // Cập nhật điểm trên UI trước
+        boolean iWasShooter = shooterName.equals(playerName);
 
-         boolean iWasShooter = shooterName.equals(playerName);
 
-         // Hiển thị animation trên MatchView
-         // Cần thêm các hàm này trong MatchView
-         if (iWasShooter) {
-             matchView.playShootAnimation(shooterZone, keeperZone, isGoal, () -> {
-                showTurnResultMessage(isGoal, true); // Hiển thị thông báo sau anim
-                 // Chờ server gửi TURN_START hoặc MATCH_END cho lượt tiếp theo
+        if (iWasShooter) {
+            matchView.playShootAnimation(shooterZone, keeperZone, isGoal, () -> {
+               // Callback này chạy sau khi anim kết thúc
                 if (isGoal) {
+                    matchView.showTurnResultText("GOALLLLL!", true, "green"); 
+                    matchView.playGoalSound(); // <-- THÊM VÀO ĐÂY
                     matchView.updateMessage("GOALLLLL! Your score + 1! \n Waiting for next turn...");
                 } else {
+                    matchView.showTurnResultText("BLOCKED", false, "red");
+                    matchView.playSaveSound();
                     matchView.updateMessage("Your shot is BLOCKED! Score unchanged! \n Waiting for next turn...");
                 }
-             });
-         } else { // I was the keeper
-             matchView.playGoalkeeperAnimation(shooterZone, keeperZone, isGoal, () -> {
-                 showTurnResultMessage(isGoal, false); // Hiển thị thông báo sau anim
-                 // Chờ server gửi TURN_START hoặc MATCH_END cho lượt tiếp theo
-                if (isGoal) {
-                    matchView.updateMessage("Unable to block the shot!!!! " + opponentName + "'s score +1!\n Waiting for next turn...");
-                } else {
-                    matchView.updateMessage("You BLOCK the shot. Score unchanged! \nWaiting for next turn...");
-                }
-             });
-         }
-         // Reset selected zone cho lượt sau
-         selectedZone = -1;
-     }
+            });
+        } else { // I was the keeper
+            matchView.playGoalkeeperAnimation(shooterZone, keeperZone, isGoal, () -> {
+                // Callback này chạy sau khi anim kết thúc
+               if (isGoal) {
+                   matchView.showTurnResultText("OPPONENT GOAL", true, "red");
+                   matchView.playGoalSound();
+                   matchView.updateMessage("Unable to block the shot!!!! " + opponentName + "'s score +1!\n Waiting for next turn...");
+               } else {
+                   matchView.showTurnResultText("SAVEEEEE!", false, "green");
+                   matchView.playSaveSound();
+                   matchView.updateMessage("You BLOCK the shot. Score unchanged! \nWaiting for next turn...");
+               }
+            });
+        }
+
+        // Xóa hàm này đi, vì chúng ta đã tích hợp nó vào logic ở trên rồi
+        // showTurnResultMessage(isGoal, iWasShooter); 
+
+        // Reset selected zone cho lượt sau
+        selectedZone = -1;
+    }
     
     private void showTurnResultMessage(boolean isGoal, boolean iWasShooter) {
         String resultMsg;
@@ -387,11 +397,13 @@ public class MatchController {
         stopTurnTimer();
         isMyTurn = false;
         if (matchView != null) { // Kiểm tra null
+            
             matchView.disableInput();
             // Hiển thị lỗi, sau đó quay về lobby
             matchView.showErrorMessage("Opponent disconnected! You win by default.", () -> {
                 closeMatchViewAndReturnToLobby(); // Callback để quay về lobby
             });
+            matchView.stopBackgroundMusic();
         } else {
             // Xử lý trường hợp view chưa sẵn sàng hoặc đã bị lỗi
             closeMatchViewAndReturnToLobby();
