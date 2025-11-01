@@ -37,12 +37,19 @@ public class MatchView extends Application {
     
     private Pane gamePane;
     private Rectangle[] goalZones = new Rectangle[6];
-    private Circle ball;
-    private Group goalkeeperGroup;
-    private Ellipse goalkeeperBody;
-    private Line leftArm, rightArm;
-    
-    private Ellipse goalkeeper;
+    private ImageView ballImageView;
+    private Image ballImage;
+
+    private ImageView goalkeeperImageView;
+    private Image goalkeeperStandingImage; // Ảnh đứng yên (word-image-3.png)
+    private Image[] goalkeeperImages = new Image[6]; // Mảng 6 ảnh động tác
+
+    // Hằng số kích thước thủ môn chi tiết hơn
+    private static final double GOALKEEPER_STAND_HEIGHT = 80; // Chiều cao khi đứng
+    // Chiều RỘNG cho các ảnh bay ngang (ảnh rộng)
+    private static final double GOALKEEPER_DIVE_WIDTH = 120; 
+    // Chiều CAO cho ảnh bay vọt lên (ảnh cao)
+    private static final double GOALKEEPER_DIVE_TOP_CENTER_HEIGHT = 90;
     
     private MatchController controller;
     private String playerName;
@@ -337,56 +344,52 @@ public class MatchView extends Application {
         }        
     }
     
+ 
     private void createGoalkeeper() {
-        // Goalkeeper in center of goal
-        goalkeeperBody = new Ellipse(450, 200, 15, 20);
-        goalkeeperBody.setFill(Color.ORANGE);
-        goalkeeperBody.setStroke(Color.DARKORANGE);
-        goalkeeperBody.setStrokeWidth(2);
+        // Tải ảnh thủ môn đứng yên (word-image-3.png)
+        goalkeeperStandingImage = new Image(getClass().getResourceAsStream("/penaltyclient/Assets/word-image-3.png"));
+
+        // Tải 6 ảnh động tác (ánh xạ tới 6 zone 0-5)
+        // Dựa theo thứ tự bạn cung cấp:
+        goalkeeperImages[0] = new Image(getClass().getResourceAsStream("/penaltyclient/Assets/word-image-6.png")); // Top Left
+        goalkeeperImages[1] = new Image(getClass().getResourceAsStream("/penaltyclient/Assets/word-image-8.png")); // Top Center
+        goalkeeperImages[2] = new Image(getClass().getResourceAsStream("/penaltyclient/Assets/word-image-7.png")); // Top Right
+        goalkeeperImages[3] = new Image(getClass().getResourceAsStream("/penaltyclient/Assets/word-image-5.png")); // Bottom Left
+        goalkeeperImages[4] = new Image(getClass().getResourceAsStream("/penaltyclient/Assets/word-image-3.png")); // Bottom Center (dùng ảnh đứng)
+        goalkeeperImages[5] = new Image(getClass().getResourceAsStream("/penaltyclient/Assets/word-image-4.png")); // Bottom Right
+
+        // Khởi tạo ImageView với ảnh đứng
+        goalkeeperImageView = new ImageView(goalkeeperStandingImage);
+        goalkeeperImageView.setFitHeight(GOALKEEPER_STAND_HEIGHT); // Đặt chiều cao 80
+        goalkeeperImageView.setPreserveRatio(true);
         
-        leftArm = new Line(435, 200, 420, 190);
-        leftArm.setStroke(Color.ORANGE);
-        leftArm.setStrokeWidth(3);
+        // Tính toán vị trí X, Y để thủ môn đứng giữa gôn
+        double standingWidth = (goalkeeperStandingImage.getWidth() / goalkeeperStandingImage.getHeight()) * GOALKEEPER_STAND_HEIGHT;
         
-        rightArm = new Line(465, 200, 480, 190);
-        rightArm.setStroke(Color.ORANGE);
-        rightArm.setStrokeWidth(3);
+        // Đặt vị trí top-left (X, Y) sao cho tâm của ảnh ở (450, 200)
+        goalkeeperImageView.setX(450 - standingWidth / 2); // 450 là tâm gôn
+        goalkeeperImageView.setY(200 - GOALKEEPER_STAND_HEIGHT / 2); // 200 là tâm gôn theo chiều Y
         
-        goalkeeperGroup = new Group(goalkeeperBody, leftArm, rightArm);
-        goalkeeperGroup.setTranslateX(0);
-        goalkeeperGroup.setTranslateY(0);
-        gamePane.getChildren().add(goalkeeperGroup);
+        gamePane.getChildren().add(goalkeeperImageView);
     }
     
-    private void updateGoalkeeperArms() {
-        double bodyX = goalkeeperBody.getCenterX();
-        double bodyY = goalkeeperBody.getCenterY();
-        leftArm.setStartX(bodyX);
-        leftArm.setStartY(bodyY);
-        leftArm.setEndX(bodyX - 20); // Tay dang ra
-        leftArm.setEndY(bodyY - 10);
-        rightArm.setStartX(bodyX);
-        rightArm.setStartY(bodyY);
-        rightArm.setEndX(bodyX + 20); // Tay dang ra
-        rightArm.setEndY(bodyY - 10);
-    }
+
     
     private void createBall() {
-        // Ball at penalty spot
-        ball = new Circle(450, 350, 12);
+        // Tải ảnh quả bóng (word-image-1.png)
+        ballImage = new Image(getClass().getResourceAsStream("/penaltyclient/Assets/word-image-1.png"));
+        ballImageView = new ImageView(ballImage);
         
-        // Soccer ball pattern
-        Stop[] ballStops = new Stop[] {
-            new Stop(0, Color.WHITE),
-            new Stop(0.9, Color.rgb(240, 240, 240)),
-            new Stop(1, Color.rgb(200, 200, 200))
-        };
-        ball.setFill(new RadialGradient(0, 0, 0.3, 0.3, 0.5, true, 
-                                       CycleMethod.NO_CYCLE, ballStops));
-        ball.setStroke(Color.BLACK);
-        ball.setStrokeWidth(1);
+        // Đặt kích thước (tương đương bán kính 12 của Circle cũ -> đường kính 24)
+        ballImageView.setFitWidth(24);
+        ballImageView.setFitHeight(24);
+
+        // Đặt vị trí top-left (X, Y) sao cho tâm của ảnh ở (450, 350)
+        ballImageView.setX(450 - 12); // 450 (tâm X) - 12 (bán kính)
+        ballImageView.setY(350 - 12); // 350 (tâm Y) - 12 (bán kính)
         
-        gamePane.getChildren().add(ball);
+        
+        gamePane.getChildren().add(ballImageView);
     }
     
     private VBox createScoreBoard() {
@@ -563,22 +566,24 @@ public class MatchView extends Application {
             // Animation di chuyển và thu nhỏ bóng
             Timeline ballAnimation = new Timeline(
                     new KeyFrame(Duration.ZERO,
-                            new KeyValue(ball.centerXProperty(), ball.getCenterX()), // Vị trí hiện tại
-                            new KeyValue(ball.centerYProperty(), ball.getCenterY()),
-                            new KeyValue(ball.radiusProperty(), 12)),
+                            new KeyValue(ballImageView.xProperty(), ballImageView.getX()), // Vị trí X hiện tại
+                            new KeyValue(ballImageView.yProperty(), ballImageView.getY()), // Vị trí Y hiện tại
+                            new KeyValue(ballImageView.fitWidthProperty(), 24), // Kích thước hiện tại
+                            new KeyValue(ballImageView.fitHeightProperty(), 24)),
                     new KeyFrame(Duration.millis(500), // Thời gian bay
-                            new KeyValue(ball.centerXProperty(), targetX),
-                            new KeyValue(ball.centerYProperty(), targetY),
-                            new KeyValue(ball.radiusProperty(), 8)) // Bóng nhỏ lại khi vào gôn
+                            new KeyValue(ballImageView.xProperty(), targetX - 8), // Tới tâm X (trừ bán kính mới 8)
+                            new KeyValue(ballImageView.yProperty(), targetY - 8), // Tới tâm Y (trừ bán kính mới 8)
+                            new KeyValue(ballImageView.fitWidthProperty(), 16), // Bóng nhỏ lại khi vào gôn
+                            new KeyValue(ballImageView.fitHeightProperty(), 16)) // Bóng nhỏ lại khi vào gôn
             );
 
             Point keeperTarget = getZoneCenter(keeperZone); // Thủ môn bay đến ô đã chọn
-            animateGoalkeeper(keeperTarget.x, keeperTarget.y);
+            // BỔ SUNG: Truyền keeperZone vào animateGoalkeeper
+            animateGoalkeeper(keeperTarget.x, keeperTarget.y, keeperZone); 
 
             ballAnimation.setOnFinished(e -> {
-                // Có thể thêm hiệu ứng (lưới rung, bóng bật ra...)
+                // ... (phần còn lại giữ nguyên)
                 if (onFinish != null) {
-                    // Delay một chút trước khi gọi onFinish để người dùng kịp nhìn kết quả
                     PauseTransition pause = new PauseTransition(Duration.millis(500));
                     pause.setOnFinished(event -> onFinish.run());
                     pause.play();
@@ -588,23 +593,27 @@ public class MatchView extends Application {
         });
     }
     
+    // Phương thức này đã đúng (chỉ cần xác nhận)
+    // Sửa phương thức này:
     public void playGoalkeeperAnimation(int shooterZone, int keeperZone, boolean isGoal, Runnable onFinish) {
         Platform.runLater(() -> {
             // Thủ môn sẽ bay đến ô keeperZone đã chọn
             Point keeperTarget = getZoneCenter(keeperZone);
-            animateGoalkeeper(keeperTarget.x, keeperTarget.y);
+            animateGoalkeeper(keeperTarget.x, keeperTarget.y, keeperZone); 
 
             // Bóng cũng bay đến ô shooterZone
             Point ballTarget = getZoneCenter(shooterZone);
             Timeline ballAnimation = new Timeline(
                     new KeyFrame(Duration.ZERO,
-                            new KeyValue(ball.centerXProperty(), ball.getCenterX()),
-                            new KeyValue(ball.centerYProperty(), ball.getCenterY()),
-                            new KeyValue(ball.radiusProperty(), 12)),
+                            new KeyValue(ballImageView.xProperty(), ballImageView.getX()),
+                            new KeyValue(ballImageView.yProperty(), ballImageView.getY()),
+                            new KeyValue(ballImageView.fitWidthProperty(), 24),
+                            new KeyValue(ballImageView.fitHeightProperty(), 24)),
                     new KeyFrame(Duration.millis(500),
-                            new KeyValue(ball.centerXProperty(), ballTarget.x),
-                            new KeyValue(ball.centerYProperty(), ballTarget.y),
-                            new KeyValue(ball.radiusProperty(), 8))
+                            new KeyValue(ballImageView.xProperty(), ballTarget.x - 8), // Tới tâm X
+                            new KeyValue(ballImageView.yProperty(), ballTarget.y - 8), // Tới tâm Y
+                            new KeyValue(ballImageView.fitWidthProperty(), 16), // Nhỏ lại
+                            new KeyValue(ballImageView.fitHeightProperty(), 16)) // Nhỏ lại
             );
 
             ballAnimation.setOnFinished(e -> {
@@ -613,37 +622,124 @@ public class MatchView extends Application {
                 pause.setOnFinished(event -> onFinish.run());
                 pause.play();
             });
-            ballAnimation.play();
+
+            // *** BỔ SUNG DÒNG NÀY ***
+            ballAnimation.play(); // Dòng này đã bị thiếu!
 
         });
     }
     
-    private void animateGoalkeeper(double targetX, double targetY) {
-        // Animation di chuyển cả nhóm thủ môn
-        TranslateTransition tt = new TranslateTransition(Duration.millis(400), goalkeeperGroup);
-        // Tính toán độ dịch chuyển cần thiết từ vị trí hiện tại
-        double currentX = goalkeeperGroup.getTranslateX() + goalkeeperBody.getCenterX(); // Vị trí gốc + dịch chuyển hiện tại
-        double currentY = goalkeeperGroup.getTranslateY() + goalkeeperBody.getCenterY();
-        tt.setByX(targetX - currentX); // Dịch chuyển thêm để đạt target
-        tt.setByY(targetY - currentY);
-        tt.setInterpolator(Interpolator.EASE_OUT); // Di chuyển mượt
 
-        // Có thể thêm animation tay dang rộng ra khi bay
+    private void animateGoalkeeper(double targetX, double targetY, int keeperZone) {
+        // 1. Lấy ảnh bay lượn tương ứng
+        Image diveImage = goalkeeperImages[keeperZone];
+        goalkeeperImageView.setImage(diveImage);
+        
+        double newWidth, newHeight;
+
+        // 2. Set Kích thước (Giải quyết Problem 1: "khá to")
+        //    Chỉ set 1 chiều (Width hoặc Height), chiều còn lại để -1 để giữ tỷ lệ
+        if (keeperZone == 1) { // Zone 1 (Top Center) - Ảnh cao
+            goalkeeperImageView.setFitWidth(-1); // Bỏ fit width
+            goalkeeperImageView.setFitHeight(GOALKEEPER_DIVE_TOP_CENTER_HEIGHT);
+            newHeight = GOALKEEPER_DIVE_TOP_CENTER_HEIGHT;
+            newWidth = (diveImage.getWidth() / diveImage.getHeight()) * newHeight;
+        } else if (keeperZone == 4) { // Zone 4 (Bottom Center) - Ảnh đứng
+            goalkeeperImageView.setFitWidth(-1);
+            goalkeeperImageView.setFitHeight(GOALKEEPER_STAND_HEIGHT);
+            newHeight = GOALKEEPER_STAND_HEIGHT;
+            newWidth = (diveImage.getWidth() / diveImage.getHeight()) * newHeight;
+        } else { // Zones 0, 2, 3, 5 (Ảnh bay ngang/rộng)
+            goalkeeperImageView.setFitHeight(-1); // Bỏ fit height
+            goalkeeperImageView.setFitWidth(GOALKEEPER_DIVE_WIDTH);
+            newWidth = GOALKEEPER_DIVE_WIDTH;
+            newHeight = (diveImage.getHeight() / diveImage.getWidth()) * newWidth;
+        }
+        goalkeeperImageView.setPreserveRatio(true);
+
+        // 3. Đặt Vị trí Gốc (luôn ở tâm 450, 200)
+        //    Tính toán X, Y của góc trên-trái để tâm ảnh ở (450, 200)
+        double newX = 450 - newWidth / 2;
+        double newY = 200 - newHeight / 2;
+        goalkeeperImageView.setX(newX);
+        goalkeeperImageView.setY(newY);
+
+        // 4. Tính toán Vị trí Đích (Giải quyết Problem 2: "lệch")
+        //    'targetX' và 'targetY' là tâm của zone.
+        double finalTargetX = targetX;
+        double finalTargetY = targetY;
+        
+        double zoneWidth = goalZones[keeperZone].getWidth();
+        double zoneHeight = goalZones[keeperZone].getHeight();
+
+        // Điều chỉnh vị trí đích (tùy chọn) để "tay" của thủ môn gần tâm zone
+        // thay vì "thân" của thủ môn. (Bạn có thể tinh chỉnh các giá trị /4, /3)
+        switch (keeperZone) {
+            case 0: // Top Left
+                finalTargetX += zoneWidth / 4; 
+                finalTargetY += zoneHeight / 4;
+                break;
+            case 2: // Top Right
+                finalTargetX -= zoneWidth / 4;
+                finalTargetY += zoneHeight / 4;
+                break;
+            case 3: // Bottom Left
+                finalTargetX += zoneWidth / 4;
+                finalTargetY -= zoneHeight / 4;
+                break;
+            case 5: // Bottom Right
+                finalTargetX -= zoneWidth / 4;
+                finalTargetY -= zoneHeight / 4;
+                break;
+            case 1: // Top Center
+                finalTargetY += zoneHeight / 3; // Di chuyển tâm ảnh xuống (để tay ở tâm zone)
+                break;
+            case 4: // Bottom Center (hơi nhún lên)
+                finalTargetX = 450; // Giữ nguyên tâm X
+                finalTargetY = 230; // Di chuyển TÂM lên trên 20px (từ 200 -> 180)
+                break;
+            }
+
+        // 5. Animation
+        TranslateTransition tt = new TranslateTransition(Duration.millis(400), goalkeeperImageView);
+        
+        // Tính delta (độ dịch chuyển) = Đích đã điều chỉnh - Gốc (450, 200)
+        double deltaX = finalTargetX - 450;
+        double deltaY = finalTargetY - 200;
+
+        // Dịch chuyển đến vị trí delta (so với vị trí gốc newX, newY)
+        tt.setToX(deltaX);
+        tt.setToY(deltaY);
+        tt.setInterpolator(Interpolator.EASE_OUT);
+
         tt.play();
     }
     
+    // THAY ĐỔI: Reset cho ImageView (Xác nhận logic)
     public void resetField() {
 //        Platform.runLater(() -> {
-        ball.setCenterX(450);
-        ball.setCenterY(350);
-        ball.setRadius(12);
+        
+        // Reset bóng
+        ballImageView.setX(450 - 12);
+        ballImageView.setY(350 - 12);
+        ballImageView.setFitWidth(24);
+        ballImageView.setFitHeight(24);
 
-        goalkeeperGroup.setTranslateX(0);
-        goalkeeperGroup.setTranslateY(0);
-        goalkeeperBody.setCenterX(450); // Đặt lại gốc nếu cần SCENE_WIDTH / 2
-        goalkeeperBody.setCenterY(200); //SCENE_HEIGHT * 0.1 + SCENE_HEIGHT * 0.2 * 0.7
-        updateGoalkeeperArms();
+        // Reset thủ môn về ảnh đứng, kích thước đứng
+        goalkeeperImageView.setImage(goalkeeperStandingImage);
+        goalkeeperImageView.setFitHeight(GOALKEEPER_STAND_HEIGHT);
+        goalkeeperImageView.setPreserveRatio(true);
+        
+        // Đặt lại vị trí đứng ban đầu
+        double standingWidth = (goalkeeperStandingImage.getWidth() / goalkeeperStandingImage.getHeight()) * GOALKEEPER_STAND_HEIGHT;
+        goalkeeperImageView.setX(450 - standingWidth / 2);
+        goalkeeperImageView.setY(200 - GOALKEEPER_STAND_HEIGHT / 2);
 
+        // **QUAN TRỌNG:** Reset mọi phép dịch chuyển (Translate) về 0
+        goalkeeperImageView.setTranslateX(0);
+        goalkeeperImageView.setTranslateY(0);
+
+        // (Phần còn lại giữ nguyên)
         selectedZone = -1;
         confirmButton.setDisable(true);
         inputEnabled = false;
