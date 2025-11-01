@@ -17,6 +17,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.stage.Stage;
 import share.MatchHistoryRecord;
+import share.OnlinePlayer;
 import share.RankingData;
 import share.ServerListResponse;
 /**
@@ -169,7 +170,7 @@ public class ClientListener implements Runnable {
                             case ServerListResponse.UPDATE_ONLINE_USERS:
                                 try {
                                     @SuppressWarnings("unchecked")
-                                    List<String> userList = (List<String>) response.getData();
+                                    List<OnlinePlayer> userList = (List<OnlinePlayer>) response.getData();
                                     lobbyController.updateOnlinePlayers(userList);
                                 } catch (ClassCastException e) {
                                     System.err.println("ClientListener: Lỗi cast UPDATE_ONLINE_USERS!");

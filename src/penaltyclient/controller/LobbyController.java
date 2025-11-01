@@ -18,6 +18,7 @@ import javafx.application.Platform;
 
 import java.util.ArrayList;
 import share.MatchHistoryRecord;
+import share.OnlinePlayer;
 import share.RankingData;
 
 /**
@@ -104,16 +105,16 @@ public class LobbyController {
         }
     }
     
-    public void updateOnlinePlayers(List<String> users) {
+    public void updateOnlinePlayers(List<OnlinePlayer> users) {
         Platform.runLater(new Runnable() { 
             @Override
             public void run() {
                 lobbyView.clearOnlinePlayers(); 
                 if (users != null) {
-                    for (String user : users) {
-                        if (user.equals(username))
+                    for (OnlinePlayer user : users) {
+                        if (user.getUsername().equals(username))
                             continue;
-                        lobbyView.addPlayer(user, "online", 0);
+                        lobbyView.addPlayer(user.getUsername(), user.getStatus(), user.getScore());
                     }
                 }
             }
