@@ -15,9 +15,10 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.util.Callback;
 import penaltyclient.controller.LobbyController;
-import penaltyclient.model.Player; 
 import penaltyclient.model.MatchRecord;
-import penaltyclient.model.RankingEntry;
+import share.MatchHistoryRecord;
+import share.OnlinePlayer;
+import share.RankingData;
 
 public class LobbyView {
 
@@ -26,17 +27,17 @@ public class LobbyView {
     private String username;
 
     // Tab 1: Online Players
-    private TableView<Player> tblPlayers;
-    private ObservableList<Player> playerList; 
+    private TableView<OnlinePlayer> tblPlayers;
+    private ObservableList<OnlinePlayer> playerList; 
     private Button btnReloadPlayers;
 
     // Tab 2: Match History
-    private TableView<MatchRecord> tblMatchHistory;
-    private ObservableList<MatchRecord> historyList;
+    private TableView<MatchHistoryRecord> tblMatchHistory;
+    private ObservableList<MatchHistoryRecord> historyList;
 
     // Tab 3: Ranking
-    private TableView<RankingEntry> tblRanking;
-    private ObservableList<RankingEntry> rankingList;
+    private TableView<RankingData> tblRanking;
+    private ObservableList<RankingData> rankingList;
 
     public LobbyView(String username, LobbyController lobbyController) {
         this.username = username;
@@ -158,16 +159,16 @@ public class LobbyView {
         tblPlayers = new TableView<>(playerList);
         tblPlayers.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY); 
 
-        TableColumn<Player, String> colName = new TableColumn<>("Name");
-        colName.setCellValueFactory(new PropertyValueFactory<Player, String>("name")); 
+        TableColumn<OnlinePlayer, String> colName = new TableColumn<>("Username");
+        colName.setCellValueFactory(new PropertyValueFactory<OnlinePlayer, String>("username")); 
 
-        TableColumn<Player, String> colStatus = new TableColumn<>("Status");
-        colStatus.setCellValueFactory(new PropertyValueFactory<Player, String>("status"));
+        TableColumn<OnlinePlayer, String> colStatus = new TableColumn<>("Status");
+        colStatus.setCellValueFactory(new PropertyValueFactory<OnlinePlayer, String>("status"));
 
-        TableColumn<Player, Integer> colScore = new TableColumn<>("Score");
-        colScore.setCellValueFactory(new PropertyValueFactory<Player, Integer>("score"));
+        TableColumn<OnlinePlayer, Integer> colScore = new TableColumn<>("Score");
+        colScore.setCellValueFactory(new PropertyValueFactory<OnlinePlayer, Integer>("score"));
 
-        TableColumn<Player, Void> colAction = new TableColumn<>("Action");
+        TableColumn<OnlinePlayer, Void> colAction = new TableColumn<>("Action");
         colAction.setCellFactory(createButtonCellFactory()); 
 
         tblPlayers.getColumns().addAll(colName, colStatus, colScore, colAction);
@@ -178,20 +179,14 @@ public class LobbyView {
         tblMatchHistory = new TableView<>(historyList);
         tblMatchHistory.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
-        TableColumn<MatchRecord, String> colOpponent = new TableColumn<>("Đối thủ");
-        colOpponent.setCellValueFactory(new PropertyValueFactory<MatchRecord, String>("opponentName"));
+        TableColumn<MatchHistoryRecord, String> colOpponent = new TableColumn<>("Đối thủ");
+        colOpponent.setCellValueFactory(new PropertyValueFactory<>("opponentUsername")); 
+        TableColumn<MatchHistoryRecord, String> colResult = new TableColumn<>("Kết quả");
+        colResult.setCellValueFactory(new PropertyValueFactory<>("resultString")); // Từ "result"
+        TableColumn<MatchHistoryRecord, String> colDate = new TableColumn<>("Thời gian");
+        colDate.setCellValueFactory(new PropertyValueFactory<>("startTime")); // Từ "date"
 
-        TableColumn<MatchRecord, String> colResult = new TableColumn<>("Kết quả");
-        colResult.setCellValueFactory(new PropertyValueFactory<MatchRecord, String>("result"));
-
-        TableColumn<MatchRecord, String> colDate = new TableColumn<>("Thời gian");
-        colDate.setCellValueFactory(new PropertyValueFactory<MatchRecord, String>("date"));
-        
         tblMatchHistory.getColumns().addAll(colOpponent, colResult, colDate);
-        
-        // Thêm dữ liệu giả để test
-        // historyList.add(new MatchRecord("PlayerB", "Win (5-3)", "2025-10-28 10:30"));
-        // historyList.add(new MatchRecord("PlayerC", "Loss (1-4)", "2025-10-27 09:15"));
     }
 
     private void setupRankingTable() {
@@ -199,27 +194,25 @@ public class LobbyView {
         tblRanking = new TableView<>(rankingList);
         tblRanking.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
-        TableColumn<RankingEntry, Integer> colRank = new TableColumn<>("Hạng");
-        colRank.setCellValueFactory(new PropertyValueFactory<RankingEntry, Integer>("rank"));
+        TableColumn<RankingData, Integer> colRank = new TableColumn<>("Hạng");
+        colRank.setCellValueFactory(new PropertyValueFactory<>("rank")); // (Dòng này ĐÚNG)
 
-        TableColumn<RankingEntry, String> colUser = new TableColumn<>("Người chơi");
-        colUser.setCellValueFactory(new PropertyValueFactory<RankingEntry, String>("username"));
+        TableColumn<RankingData, String> colUser = new TableColumn<>("Người chơi");
+        colUser.setCellValueFactory(new PropertyValueFactory<>("username")); // (Dòng này ĐÚNG)
 
-        TableColumn<RankingEntry, Integer> colScore = new TableColumn<>("Điểm");
-        colScore.setCellValueFactory(new PropertyValueFactory<RankingEntry, Integer>("score"));
-        
-        TableColumn<RankingEntry, Integer> colWins = new TableColumn<>("Số trận thắng");
-        colWins.setCellValueFactory(new PropertyValueFactory<RankingEntry, Integer>("wins"));
+        TableColumn<RankingData, Integer> colScore = new TableColumn<>("Điểm");
+        // SỬA DÒNG NÀY:
+        colScore.setCellValueFactory(new PropertyValueFactory<>("totalScore")); // Từ "score"
+
+        TableColumn<RankingData, Integer> colWins = new TableColumn<>("Số trận thắng");
+        // SỬA DÒNG NÀY:
+        colWins.setCellValueFactory(new PropertyValueFactory<>("totalWins")); // Từ "wins"
 
         tblRanking.getColumns().addAll(colRank, colUser, colScore, colWins);
-        
-        // Thêm dữ liệu giả để test
-        // rankingList.add(new RankingEntry(1, "BestPlayer", 1500, 50));
-        // rankingList.add(new RankingEntry(2, "PlayerA", 1400, 45));
     }
 
     public void addPlayer(String name, String status, int score) {
-        Player player = new Player(name, status, score);
+        OnlinePlayer player = new OnlinePlayer(name, status, score);
         Platform.runLater(new Runnable() { 
             @Override
             public void run() {
@@ -239,7 +232,7 @@ public class LobbyView {
     }
 
     // Cập nhật bảng Lịch sử đấu (Tab 2)
-    public void updateMatchHistory(java.util.List<MatchRecord> records) {
+    public void updateMatchHistory(java.util.List<MatchHistoryRecord> records) {
          Platform.runLater(new Runnable() { 
             @Override
             public void run() {
@@ -250,7 +243,7 @@ public class LobbyView {
     }
 
     // Cập nhật bảng Xếp hạng (Tab 3)
-    public void updateRanking(java.util.List<RankingEntry> entries) {
+    public void updateRanking(java.util.List<RankingData> entries) {
          Platform.runLater(new Runnable() { 
             @Override
             public void run() {
@@ -266,11 +259,11 @@ public class LobbyView {
     }
     
     // Hàm tạo nút "Invite" (Không đổi)
-    private Callback<TableColumn<Player, Void>, TableCell<Player, Void>> createButtonCellFactory() {
-        return new Callback<TableColumn<Player, Void>, TableCell<Player, Void>>() {
+    private Callback<TableColumn<OnlinePlayer, Void>, TableCell<OnlinePlayer, Void>> createButtonCellFactory() {
+        return new Callback<TableColumn<OnlinePlayer, Void>, TableCell<OnlinePlayer, Void>>() {
             @Override
-            public TableCell<Player, Void> call(final TableColumn<Player, Void> param) {
-                final TableCell<Player, Void> cell = new TableCell<Player, Void>() {
+            public TableCell<OnlinePlayer, Void> call(final TableColumn<OnlinePlayer, Void> param) {
+                final TableCell<OnlinePlayer, Void> cell = new TableCell<OnlinePlayer, Void>() {
                     private final Button btn = new Button("Invite");
                     {
                         btn.setStyle(
@@ -278,8 +271,8 @@ public class LobbyView {
                             "-fx-font-weight: bold; -fx-background-radius: 5;"
                         );
                         btn.setOnAction(event -> {
-                            Player player = getTableView().getItems().get(getIndex());
-                            lobbyController.handleInvite(player.getName());
+                            OnlinePlayer player = getTableView().getItems().get(getIndex());
+                            lobbyController.handleInvite(player.getUsername());
 //                            btn.setText("Invited"); 
 //                            btn.setDisable(true);   
                         });

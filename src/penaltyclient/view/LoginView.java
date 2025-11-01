@@ -33,29 +33,23 @@ public class LoginView {
         grid.setVgap(10);
         grid.setPadding(new Insets(25, 25, 25, 25));
         
-        // === THÊM MÀU SẮC ===
-        // Đặt màu nền là màu xanh lá cây đậm (màu sân cỏ)
-        grid.setStyle("-fx-background-color: #2E7D32;"); // Bạn có thể đổi mã màu #2E7D32 thành màu khác
+        grid.setStyle("-fx-background-color: #2E7D32;");
 
         Text scenetitle = new Text("Welcome to Penalty Game");
         scenetitle.setFont(Font.font("Tahoma", FontWeight.NORMAL, 20));
-        // Đặt màu chữ là màu trắng và in đậm
         scenetitle.setStyle("-fx-fill: white; -fx-font-weight: bold;");
         grid.add(scenetitle, 0, 0, 2, 1);
 
         Label lbUsername = new Label("Username:");
-        // Đặt màu chữ là màu trắng
         lbUsername.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");
         grid.add(lbUsername, 0, 1);
 
         txtUsername = new TextField();
         txtUsername.setPromptText("Enter your username");
-        // Đặt kiểu cho ô nhập liệu
         txtUsername.setStyle("-fx-background-radius: 5;");
         grid.add(txtUsername, 1, 1);
 
         Label lbPassword = new Label("Password:");
-        // Đặt màu chữ là màu trắng
         lbPassword.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");
         grid.add(lbPassword, 0, 2);
         
@@ -66,23 +60,20 @@ public class LoginView {
         grid.add(txtPassword, 1, 2);
 
 
-        // Nút Login: Nền trắng, chữ xanh
         btnLogin = new Button("Login");
         btnLogin.setStyle(
             "-fx-background-color: white; " +
-            "-fx-text-fill: #2E7D32; " + // Chữ màu xanh lá
+            "-fx-text-fill: #2E7D32; " +
             "-fx-font-weight: bold; " +
             "-fx-background-radius: 5;"
         );
         
-        // Nút Exit: Nền xám nhạt, chữ đen
         btnExit = new Button("Exit");
         btnExit.setStyle(
             "-fx-background-color: #f0f0f0; " +
             "-fx-text-fill: black; " +
             "-fx-background-radius: 5;"
         );
-        // =======================
 
         HBox hbBtn = new HBox(10);
         hbBtn.setAlignment(Pos.BOTTOM_RIGHT);
@@ -107,5 +98,4 @@ public class LoginView {
         return grid;
     }
     
-    // Không cần hàm initComponents() của Swing ở đây
 }

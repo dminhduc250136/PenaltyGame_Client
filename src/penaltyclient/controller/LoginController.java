@@ -38,6 +38,11 @@ public class LoginController {
         stage.setTitle("Login");
         stage.setScene(scene);
         stage.setResizable(false);
+        stage.setOnCloseRequest(e -> {
+            // Ngăn sự kiện đóng cửa sổ ngay lập tức
+            e.consume();
+            System.exit(0);
+        });
         stage.show();
     }
 

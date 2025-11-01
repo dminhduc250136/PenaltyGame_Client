@@ -16,9 +16,9 @@ import penaltyclient.model.SocketService;
 import penaltyclient.controller.MatchController;
 import javafx.application.Platform;
 
-import penaltyclient.model.MatchRecord;
-import penaltyclient.model.RankingEntry;
 import java.util.ArrayList;
+import share.MatchHistoryRecord;
+import share.RankingData;
 
 /**
  *
@@ -59,10 +59,18 @@ public class LobbyController {
     }
 
     public void showLobbyView() {
-//        Scene scene = new Scene(lobbyView.getView(), 600, 450); 
         stage.setTitle("Lobby - " + username);
         stage.setScene(lobbyScene);
-        stage.setResizable(true); 
+        stage.setResizable(true);
+        
+        stage.setOnCloseRequest(e -> {
+            // Ngăn sự kiện đóng cửa sổ ngay lập tức
+            e.consume();
+            handleLogout();
+            Platform.exit();
+            System.exit(0);
+        });
+        
         stage.show();
 
         if (this.clientListener == null) {
@@ -120,14 +128,14 @@ public class LobbyController {
     public void loadMatchHistory() {
         System.out.println("Loading match history...");
         try {   
-            sendMessage("GET_MATCH_HISTORY:" + username);
+            sendMessage("GET_MATCH_HISTORY");
         } catch (Exception ex) {
             Logger.getLogger(LobbyController.class.getName()).log(Level.SEVERE, "Lỗi khi gửi yêu cầu loadMatchHistory", ex);
         }
         
     }
     
-    public void updateMatchHistory(List<MatchRecord> records) {
+    public void updateMatchHistory(List<MatchHistoryRecord> records) {
         if (records != null) {
             lobbyView.updateMatchHistory(records);
         }
@@ -143,7 +151,7 @@ public class LobbyController {
  
     }
     
-    public void updateRanking(List<RankingEntry> entries) {
+    public void updateRanking(List<RankingData> entries) {
         if(entries != null) {
             lobbyView.updateRanking(entries);
 
@@ -218,7 +226,7 @@ public class LobbyController {
         showAlert("Match Starting", "Trận đấu " + matchId + " đang bắt đầu!");
         // TODO: Chuyển sang MatchController (JavaFX)
     }
-
+    
     public String getUsername() {
         return username;
     }

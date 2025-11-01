@@ -16,6 +16,8 @@ import java.util.List; // Cần import List
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.stage.Stage;
+import share.MatchHistoryRecord;
+import share.RankingData;
 import share.ServerListResponse;
 /**
  *
@@ -135,9 +137,7 @@ public class ClientListener implements Runnable {
                                     // **QUAN TRỌNG: Chuyển đổi View trên JavaFX Thread**
                                     Platform.runLater(() -> {
                                         System.out.println("Client: Received START_MATCH, attempting to switch view...");
-                                        // 1. Tạo MatchController MỚI
-                                        // Cần truyền Stage hiện tại (mainStage) vào MatchController
-                                        // Hoặc để MatchController tạo Stage mới và ẩn Stage cũ
+                                        // MatchController tạo Stage mới và ẩn Stage cũ
                                         lobbyController.hideLobbyView();
                                         matchController = new MatchController(
                                                 lobbyController.getUsername(),
@@ -153,11 +153,7 @@ public class ClientListener implements Runnable {
 
                                         // 3. Yêu cầu MatchController hiển thị MatchView
                                         // (Hàm này nên xử lý việc thay Scene trên mainStage)
-                                        matchController.showMatchView();// Đổi tên hàm thành showMatchScene
-
-                                        // 4. Gửi thông tin bắt đầu cho MatchController (sau khi view sẵn sàng)
-                                        // Chuyển việc gọi handleMatchStart vào trong showMatchScene hoặc sau đó một chút
-                                        // matchController.handleMatchStart(firstShooter); // Gọi sau khi Scene đã hiển thị
+                                        matchController.showMatchView();
                                     });
                                 } else {
                                     System.err.println("Client: Invalid START_MATCH message format: " + message);
@@ -183,13 +179,13 @@ public class ClientListener implements Runnable {
                             // Bạn có thể dễ dàng thêm case cho Xếp hạng và Lịch sử
                             
                             case ServerListResponse.UPDATE_RANKING:
-                                // List<RankingEntry> rankingList = (List<RankingEntry>) response.getData();
-                                // lobbyController.updateRanking(rankingList);
+                                List<RankingData> rankingList = (List<RankingData>) response.getData();
+                                lobbyController.updateRanking(rankingList);
                                 break;
                                 
                             case ServerListResponse.UPDATE_HISTORY:
-                                // List<MatchRecord> historyList = (List<MatchRecord>) response.getData();
-                                // lobbyController.updateMatchHistory(historyList);
+                                 List<MatchHistoryRecord> historyList = (List<MatchHistoryRecord>) response.getData();
+                                 lobbyController.updateMatchHistory(historyList);
                                 break;
                         }
                     }
